@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Timur's rtc chat</title>
+<script src="jquery-2.0.0.js"></script>
+<script src="bootstrap.min.js"></script>
+<link href="bootstrap.min.css" rel="stylesheet">
+<link href="bootstrap-responsive.min.css" rel="stylesheet">
+</head>
+<body style="height:100%">
+
+<div class="modal" id="getRoomName" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" hidden>
+  <div class="modal-header">
+    <h3 id="myModalLabel">{{.Title}}</h3>
+  </div>
+  <div class="modal-body">
+  	<br>
+    <form class="form-inline" action="javascript:makeCall()">
+      <input type="text" id="roomName" placeholder="Enter your name" autocomplete="off" autofocus>
+      <label>
+      	<input type="checkbox" id="linktyp" value="p2p" 
+      		   style="width: 13px; height: 13px; margin-right:2px; margin-left:24px;"/>
+      	Use P2P link (default: relayed)
+      </label>
+    </form>
+    <p style="margin-right:10px;">
+      All communication will be encrypted end-to-end.
+    </p>
+    <p style="margin-right:4px;">
+      The name you enter only serves as info towards the callee.
+      P2P mode will only be activated, if requested by both parties. 
+      Otherwise, all communication will be relayed.
+      In relayed mode, client IP addresses are private and are not visible to the other party.
+      P2P mode provides faster communications. File transfer is only enabled in P2P mode.
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary" id="callBtn" data-dismiss="modal"     	    
+    	    aria-hidden="true" style="width:120px;">Call</button>
+  </div>
+</div>
+
+<div class="modal" id="waitForConnection" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" hidden>
+  <div class="modal-header">
+    <h3 id="myModalLabel">Waiting for connection</h3>
+  </div>
+  <div class="modal-body">
+    This dialog will disappear when a connection is made.
+  </div>
+  <div class="spinner" align="center">
+    <img src="spinner.gif"></img>
+  </div>
+</div>
+
+<!--audio id="audiotag" src="KzurbSonar.wav" preload="auto"></audio-->
+
+<style type="text/css">
+label {
+    display: block;
+    padding-left: 15px;
+    text-indent: -15px;
+}
+input {
+    padding: 0;
+    vertical-align: bottom;
+    position: relative;
+    top: -3px;
+    margin-top: 4px;
+    *overflow: hidden;
+}
+</style>
+<script>
+var key = "{{.Key}}";
+</script>
+<script src="/html/caller-enter-name/caller-enter-name.js"></script>
+</body>
+</html>
+

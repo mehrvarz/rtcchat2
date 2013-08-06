@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Timur's rtc chat</title>
+<script src="adapter.js"></script>
+<script src="jquery-2.0.0.js"></script>
+<script src="bootstrap.min.js"></script>
+<link href="bootstrap.min.css" rel="stylesheet">
+<link href="bootstrap-responsive.min.css" rel="stylesheet">
+<style type="text/css">
+html,body {
+height:100%; margin-left:0; margin-top:0; margin-right:0; padding:0;
+}
+body { 
+background: #222
+}
+</style>
+</head>
+<body>
+
+<div style="position:relative; margin-top:3%;">
+  <div style="position:absolute; left:3%;">
+    <div class="span10">
+      <p class="head muted" style="margin-left:6px;">Timur's rtc chat</p>
+      <fieldset class="well">
+        <div class="text-info" id="chatlog" style="height:256px; overflow:auto; resize:both;"></div>
+      </fieldset>
+      <form class="form-inline" action="javascript:sendMessageFromForm()">
+        <input type="text" id="messageTextBox" placeholder="Type your message here" 
+          autocomplete="off" required autofocus style="width:88%; resize:both;">
+        <button type="button" id="sendMessageBtn" class="btn" style="width:70px">Send</button>
+      </form>
+      <!--input type="file" id="fileBtn"-->
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="getRoomName" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" hidden>
+  <div class="modal-header">
+    <h3 id="myModalLabel">rtc chat</h3>
+  </div>
+  <div class="modal-body">
+    <form class="form-inline" action="javascript:roomNameFromForm()">
+      <input type="text" id="roomName" placeholder="Enter secret word" autocomplete="off" autofocus>
+    </form>
+    <p style="margin-right:10px;">
+      All communication will be encrypted end-to-end.
+    </p>
+    <p style="margin-right:4px;">
+      The word you enter will be used to match your chat partner.
+      All communication will be relayed.
+      Your IP address is private and will not be visible to the other party.
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary" id="setRoomBtn" data-dismiss="modal" aria-hidden="true">Connect</button>
+  </div>
+</div>
+
+<div class="modal" id="waitForConnection" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" hidden>
+  <div class="modal-header">
+    <h3 id="myModalLabel">Waiting for connection</h3>
+  </div>
+  <div class="modal-body">
+    This dialog will disappear when a connection is made.
+  </div>
+  <div class="spinner" align="center">
+    <img src="spinner.gif"></img>
+  </div>
+</div>
+
+<audio id="audiotag" src="bing.wav" preload="auto"></audio>
+<script src="rtcchat.js"></script>
+</body>
+</html>
+
