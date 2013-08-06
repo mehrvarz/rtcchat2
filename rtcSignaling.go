@@ -1,10 +1,9 @@
-// rtcchat rtcSignaling.go
+// rtcchat2 rtcSignaling.go
 // Copyright 2013 Timur Mehrvarz. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 // rtcSignaling is our Websocket rendezvous server
-// as well as http(s) webserver for the Websocket app files
 
 package rtcchat2
 

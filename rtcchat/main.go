@@ -1,20 +1,5 @@
-// rtcredirect
+// rtcchat2
 // Copyright 2013 Timur Mehrvarz. All rights reserved.
-//
-// #requirements:
-// #go get labix.org/v2/mgo
-// #run service: cd mongodb-linux-x86_64-2.4.5 
-// #             mkdir ~/data/db
-// #             bin/mongod --dbpath ~/data/db
-// #announce:    https://(hostaddr):8000/(key)
-// #redirect:    http://(hostaddr):8000/(key)
-//
-// callee:      https://(hostaddr):8078/callee:(callee-private-key)
-// caller:      https://(hostaddr):8000/call:(callee-public-key)
-// both will be redirected to:
-//              https://localhost:8077/?room=(uniqueID)
-//
-//
 
 package main
 
