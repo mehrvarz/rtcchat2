@@ -15,6 +15,7 @@ var webrtcDataChannel = null;
 var roomName = null;
 var linkType = null; // default null=p2p; option="relayed"
 var key = null;
+var calleeKey = null;
 var serverRoutedMessaging = false;
 
 $('#waitForConnection').modal('hide');
@@ -45,8 +46,9 @@ function init() {
 	websocket.onopen = function () {
 	    roomName = getUrlParameter('room');
 		key = getUrlParameter('key');
+		calleeKey = getUrlParameter('calleeKey');
         linkType = getUrlParameter('linktype');
-	    console.log("start: roomName="+roomName+" key="+key+" linkType="+linkType);
+	    console.log("start: roomName="+roomName+" key="+key+" calleeKey="+calleeKey+" linkType="+linkType);
 
         if(!roomName) {
         	// roomName was NOT given by URL parameter; getRoomName -> #setRoomBtn
@@ -61,10 +63,19 @@ function init() {
         }
 
         if(key) {
-        	// this will be sent to rtcSignaling.go
+        	// the callee comes here (vial html link and) with a key=
+        	// which will be sent to rtcSignaling.go to stop the ringing
 		    console.log("start: websocket.send",{command:'stopRing', calleekey: key});
 	    	websocket.send(JSON.stringify({command:'stopRing', calleekey: key}));
-        }       
+        }
+        
+        if(calleeKey) {
+			// the caller comes here via caller-enter-name.js
+			// providing us with &calleeKey= so we can stop the ringing in case the caller disappears
+        	// which will be sent to rtcSignaling.go 
+			console.log("start: websocket.send",{command:'forRing', calleekey: calleeKey});
+			websocket.send(JSON.stringify({command:'forRing', calleekey: calleeKey}));
+        }
 
 	    bindSocketEvents();
 	};

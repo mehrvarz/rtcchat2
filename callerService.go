@@ -167,7 +167,8 @@ func WsSessionHandlerCaller(cws *websocket.Conn, doneWsSessionHandler chan bool)
 			}
 
 			// notify callee (via cws) of incoming call from caller-username
-			// this will offer the callee a link to answer the call
+			// this will be handled in rtccallee.js
+			// it will offer the callee a link to answer the call
 			// and it will make the callee's browser start ringing
 			uniqueRoomName := generateId()
 			err := websocket.Message.Send(calleeCws,
@@ -179,10 +180,11 @@ func WsSessionHandlerCaller(cws *websocket.Conn, doneWsSessionHandler chan bool)
 				fmt.Println(TAG3, "WsSessionHandlerCaller connect: websocket.Message.Send done")
 				// callee now has a unique link to the signaling service session
 
+                // this will make the caller switch to rtcSignaling.go/rtcchat.js
+                // see: caller-enter-name.js: case "newRoom": 
 				websocket.Message.Send(cws,
 					fmt.Sprintf(`{"command":"newRoom", "roomName": "%s"}`, uniqueRoomName))
-
-				// we can now end the caller websocket session
+				// we can now end this callers websocket session (we don't have to: EOF would come anyway)
 				quit = true
 			}
 		}

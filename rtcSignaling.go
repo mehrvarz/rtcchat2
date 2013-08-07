@@ -418,7 +418,31 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 					websocket.Message.Send(calleeCws, `{"command":"stopRing"}`)
 				}
 			}
+
+		case "forRing":
+			fmt.Println(TAG2, "WsSessionHandler forRing msg=", msg)
+			calleekey := msg["calleekey"]
+			fmt.Println(TAG2, "WsSessionHandler forRing calleekey=", calleekey)
+			if calleekey != "" {
+			    var ok = false
+				otherCws, ok = CalleeMap[calleekey]
+				if !ok {
+				    otherCws = nil
+				}
+            }
+			if otherCws==nil {
+    			fmt.Println(TAG2, "WsSessionHandler forRing no otherCws")
+			} else {
+    			fmt.Println(TAG2, "WsSessionHandler forRing otherCws set")
+			}
 		}
+	}
+
+	// send stop ringing in case caller has just disappeared
+	fmt.Println(TAG2, "WsSessionHandler end of session stopRing",otherCws)
+	if otherCws!=nil {
+		// this will be handled in rtccallee.js
+	    websocket.Message.Send(otherCws, `{"command":"stopRing"}`)
 	}
 
 	if roomName != "" {

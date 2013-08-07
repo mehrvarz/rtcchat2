@@ -48,26 +48,30 @@ function connectToCallerService() {
     socket.onmessage = function(m) { 
         var data = JSON.parse(m.data);
     	//console.log("socket message raw:", data);
+		lastServerAction = new Date().getTime();
     	
     	switch(data.command) {
 		case "alive!":
 			// this is the host confirming connect or alive
 			//console.log("connect:");
 			// reset heartbeat timeout
-			lastServerAction = new Date().getTime();
 			break;
 
 		case "info":
 			var msg = data.msg;
 			console.log(msg);
+			break;
 
 		case "newRoom":
+		    // callerService.go telling us to switch to rtcSignaling.go/rtcchat.js
 			var roomName = data.roomName;
-			lastServerAction = new Date().getTime();
 			console.log("newRoom: roomName="+roomName);
 			if(roomName!="") {
-				window.location.href = "https://"+location.hostname+":"+wsPort+"/?room="+roomName;
-            }
+			    // we send the key as calleeKey=, so that rtcchat.js can hand it over to rtcSignaling.go via forRing
+			    // so that in case this caller disappears, rtcSignaling.go can stop the ringing
+				window.location.href = "https://"+location.hostname+":"+wsPort+"/?room="+roomName+"&calleeKey="+key;
+			}
+			break;
 		}
     }
 }
