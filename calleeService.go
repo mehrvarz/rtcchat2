@@ -169,7 +169,7 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 	}
 
 	if callerKey != "" {
-		CalleeMap[callerKey] = ""
+		CalleeMap[callerKey] = nil
 	}
 
 	fmt.Println(TAG3, "WsSessionHandlerCallee done")
