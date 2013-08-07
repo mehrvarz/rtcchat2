@@ -3,7 +3,7 @@ rtc chat v2
 
 A WebRTC chat service written in Go
 
-rtc chat establishes end-to-end encrypted, relayed communication links.
+rtc chat establishes end-to-end encrypted, P2P and relayed communication links.
 
 More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
