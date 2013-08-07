@@ -155,10 +155,12 @@ func WsSessionHandlerCaller(cws *websocket.Conn, doneWsSessionHandler chan bool)
 			fmt.Println(TAG,"call callerName=",callerName," calleeKey=",calleeKey," linkType",linkType)
 
 			// get callee-cws via callee-key
+			// TODO: it would be nice to support multiple calleeKey entries in CalleeMap[]
+			// and send all of them the links below
 			calleeCws, ok := CalleeMap[calleeKey]
 			if !ok {
 				fmt.Println(TAG,"key not found:",calleeKey)
-				//http.Error(w, "key not found", 405)	// TODO
+				//http.Error(w, "key not found", 405)	// TODO?
 				return
 			}
 

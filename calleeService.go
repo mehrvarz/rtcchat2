@@ -80,29 +80,9 @@ func CalleeService(secure bool, sigport int) {
         			key = "23-54-d5-2c"
             }
 
-/*
-			// now we check if the public key is marked as being online
-			_, ok := CalleeMap[key]
-			if !ok {
-				// unknown key: respond html "Requested user is currently not available"
-				fmt.Println(TAG, "unknown key", key)
-				// add artificial delay: fight user scanning
-				select {
-				case <-time.After(3 * time.Second):
-					type PatchInfo struct {
-						Key   string
-					}
-					patchInfo := PatchInfo{key}
-					htmlTempl := template.Must(template.ParseFiles("html/callee-unavailable/index.html"))
-					htmlTempl.Execute(w, patchInfo)
-				}
-				return
-			}
-*/
-			// requested client is online
-			fmt.Println(TAG, "user with key is online:", key)
-
-			// open html-form to allow caller to enter his own name
+			// hand over key by patching callee/index.html
+			// so that rtccallee.js can send back the key via websocket "announce" 
+			// for CalleeMap[key] = cws (see below)
 			type PatchInfo struct {
 				Key string
 			}
@@ -145,6 +125,8 @@ func WsHandlerCallee(cws *websocket.Conn) {
 
 // handle one complete websockets session
 func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan bool) {
+	var callerKey = ""
+
 	err := websocket.Message.Send(cws, `{"command":"alive!"}`)
 	if err != nil {
 		fmt.Println(TAG3, "WsSessionHandlerCallee failed to send 'connect' state", err)
@@ -176,25 +158,18 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 			}
 
 		case "announce":
-			uniqueID := msg["uniqueID"]
-			CalleeMap[uniqueID] = cws
-			fmt.Println(TAG3, "WsSessionHandlerCallee user with key is now registered:",uniqueID)
-			msg := "you have been registered with uniqueID="+uniqueID
+			callerKey = msg["uniqueID"]
+			CalleeMap[callerKey] = cws
+			// callerService.go will find cws entry in CalleeMap[] in: case "call":
+			// TODO: this way we CANNOT have a callee be registered on multiple devices in parallel 
+			fmt.Println(TAG3, "WsSessionHandlerCallee user with key is now registered:",callerKey)
+			msg := "you have been registered for caller id="+callerKey
 			websocket.Message.Send(cws, fmt.Sprintf(`{"command":"info","msg": "%s"}`, msg))
-/*
-		case "stopRing":
-			fmt.Println(TAG3, "WsSessionHandlerCallee stopRing")
-			calleekey := msg["calleekey"]
-			fmt.Println(TAG3, "WsSessionHandlerCallee stopRing calleekey=", calleekey)
-			if calleekey != "" {
-				calleeCws, ok := CalleeMap[calleekey]
-				if ok {
-					fmt.Println(TAG3, "WsSessionHandlerCallee stopRing websocket.Message.Send()")
-					websocket.Message.Send(calleeCws, `{"command":"stopRing"}`)
-				}
-			}
-*/
 		}
+	}
+
+	if(callerKey!="") {
+		CalleeMap[callerKey] = ""
 	}
 
 	fmt.Println(TAG3, "WsSessionHandlerCallee done")

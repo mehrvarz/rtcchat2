@@ -42,11 +42,10 @@ function connectToAdminServer() {
 	    checkHeartBeats();
 	    
 	    // announce our availability for incoming calls
-	    // key taken from index.html, patched by rtcadmin.go
+	    // key (public caller key) taken from index.html, patched by calleeService.go
 	    console.log("announce ",key);
 	    socket.send(JSON.stringify({command:'announce', uniqueID: key}));
-	    
-	    // also possible: admin-client enters username + password, which maps to unique ID    
+		// this will be processed in calleeService: case "announce":	    
 	};
 
 	socket.onerror = function () {
@@ -75,8 +74,9 @@ function connectToAdminServer() {
 	        break;
 
 		case "newRoom":
-			// this event started in caller-enter-name.js: roomNameFromForm()
-			// and is being delivered via rtcredirect.go: case "call":
+			// someone is calling us
+			// this event started in caller-enter-name.js: makeCall()
+			// and is being delivered via callerService.go: case "call":
 			var callerName = data.callerName;
 			var roomName = data.roomName;
 			var linkType = data.linkType;
