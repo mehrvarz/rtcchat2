@@ -168,12 +168,12 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 
 		case "subscribe":
 			// if a call comes in, rtcadmin.js will generate a link "incoming chat from..."
-           	// the callee, clicking on this link, will be forwarded to rtcchat.js 
-           	// (see: getUrlParameter('room') and subscribeRoom())
-           	// from where roomName + linkType will be forwarded here
+			// the callee, clicking on this link, will be forwarded to rtcchat.js
+			// (see: getUrlParameter('room') and subscribeRoom())
+			// from where roomName + linkType will be forwarded here
 			roomName = msg["room"]
 			linkType = msg["linkType"]
-			fmt.Println(TAG2, "WsSessionHandler subscribe: roomName",roomName,"linkType",linkType)
+			fmt.Println(TAG2, "WsSessionHandler subscribe: roomName", roomName, "linkType", linkType)
 
 			r, ok2 := roomInfoMap[roomName]
 			if !ok2 {
@@ -286,14 +286,14 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 
 			// the requested linkType is sent from rtccallee.js: case "newRoom":...
 			// via rtcchat.js: linkType=getUrlParameter('typ') and subscribeRoom() socket.send()
-			if linkType=="p2p" {
+			if linkType == "p2p" {
 				fmt.Println(TAG2, "##### P2P mode ###### ")
-                sendConsoleMessage(cws, nil, "using p2p rtc link...")
+				sendConsoleMessage(cws, nil, "using p2p rtc link...")
 
 			} else {
 				// UDP-RELAY mode: start one UDP proxy per "typ srflx" candidate
 
-                sendConsoleMessage(cws, nil, "using relayed rtc link...")
+				sendConsoleMessage(cws, nil, "using relayed rtc link...")
 
 				hostAddrIP4 := HostAddrIP4("") // from stun.go
 				var hostAddr = fmt.Sprintf("%d.%d.%d.%d",
@@ -303,7 +303,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				idx := strings.Index(messageString, "typ srflx")
 				if idx < 0 {
 					fmt.Println(TAG2, "NOT FOUND 'typ srflx'")
-                    sendConsoleMessage(cws, otherCws, "linktype relayed failed: no srflx entries")
+					sendConsoleMessage(cws, otherCws, "linktype relayed failed: no srflx entries")
 				} else {
 					substr := messageString[0:idx]
 					//fmt.Println(TAG2,"substr="+substr)
@@ -312,7 +312,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 					//fmt.Println(TAG2,"elements=",elements)
 					if elements <= 2 {
 						fmt.Println(TAG2, "NOT FOUND enough elements=", elements)
-                        sendConsoleMessage(cws, otherCws, "linktype relayed failed: SDP element count")
+						sendConsoleMessage(cws, otherCws, "linktype relayed failed: SDP element count")
 					} else {
 						// addr = the host of the 1st "typ srflx" entry
 						addr = f[elements-3]
@@ -329,14 +329,13 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 							if elements2 > 0 {
 								// localaddr = the 192.168.x.x addr of the 1st "typ host" entry
 								localaddr = f2[elements2-3]
-								fmt.Println(TAG2,"localaddr="+localaddr)
+								fmt.Println(TAG2, "localaddr="+localaddr)
 							}
 						}
 
-
 						// we replace all addr entries (usually 3) to point to our proxy
 						portArray := make([]string, 16)
-                        proxyCount := 0
+						proxyCount := 0
 						f = strings.Split(messageString, " ")
 						var count = 0
 						for idx, word := range f {
@@ -345,19 +344,19 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 									f[idx] = hostAddr + f[idx][len(addr):]
 								} else if count == 1 {
 									f[idx] = hostAddr
-									portArray[proxyCount] = f[idx+1]  // port
+									portArray[proxyCount] = f[idx+1] // port
 									//f[idx+1] = fmt.Sprintf("%d",udpAddr.Port)
 									proxyCount++
 								} else {
 									f[idx] = hostAddr
-									portArray[proxyCount] = f[idx+1]  // port
+									portArray[proxyCount] = f[idx+1] // port
 									//f[idx+1] = fmt.Sprintf("%d",udpAddr.Port)
 									proxyCount++
 								}
 								count++
 								//fmt.Println(TAG2,"replaced addr at idx=",idx,f[idx],f[idx+1])
 
-							} else if(localaddr!="" && word==localaddr) {
+							} else if localaddr != "" && word == localaddr {
 								// we also replace localaddr to enforce relayed mode also for
 								// two clients in the same network
 								f[idx] = "192.168.251.251"
@@ -365,32 +364,32 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 						}
 
 						// now we start 1 UDP proxy for each replaced "typ srflx" entry
-                        if(proxyCount>0) {
-                            // start UDP proxies
-						    fmt.Println(TAG2, "start udp proxies", proxyCount)
-						    for i := 0; i<proxyCount; i++ {
-							    _, err := UdpProxy( hostAddr, addr, portArray[i], sessionNumber, i)
-							    if err != nil {
-								    fmt.Println(TAG2, "UdpProxy err", err)
-								    // TODO:
-							    }
-        					}
-        					
+						if proxyCount > 0 {
+							// start UDP proxies
+							fmt.Println(TAG2, "start udp proxies", proxyCount)
+							for i := 0; i < proxyCount; i++ {
+								_, err := UdpProxy(hostAddr, addr, portArray[i], sessionNumber, i)
+								if err != nil {
+									fmt.Println(TAG2, "UdpProxy err", err)
+									// TODO:
+								}
+							}
+
 							newMessageString := ""
 							for _, word := range f {
 								newMessageString += word + " "
 							}
 							messageString = newMessageString
 
-        				} else {
-                            sendConsoleMessage(cws, otherCws, "linktype relayed failed: addr not found")
-        				}
+						} else {
+							sendConsoleMessage(cws, otherCws, "linktype relayed failed: addr not found")
+						}
 
-                        sessionNumber++
-                        if(sessionNumber>50000) {
-                        	sessionNumber=0
-                       	}
-						
+						sessionNumber++
+						if sessionNumber > 50000 {
+							sessionNumber = 0
+						}
+
 					}
 				}
 			}
@@ -449,12 +448,12 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 }
 
 func sendConsoleMessage(cws *websocket.Conn, otherCws *websocket.Conn, msg string) {
-    json := fmt.Sprintf(`{"command":"consoleMessage", "message": "%s"}`,msg)
-    fmt.Println(TAG2, "send ", json)
-    websocket.Message.Send(cws, json)
-    if(otherCws!=nil) {
-        websocket.Message.Send(otherCws, json)
-    }
+	json := fmt.Sprintf(`{"command":"consoleMessage", "message": "%s"}`, msg)
+	fmt.Println(TAG2, "send ", json)
+	websocket.Message.Send(cws, json)
+	if otherCws != nil {
+		websocket.Message.Send(otherCws, json)
+	}
 }
 
 func waitForCmd(cmd **exec.Cmd, abortCmdChan <-chan bool) {
@@ -489,4 +488,3 @@ func waitForCmd(cmd **exec.Cmd, abortCmdChan <-chan bool) {
 		fmt.Println(TAG2, "waitForCmd cmd.Start() failed", err)
 	}
 }
-

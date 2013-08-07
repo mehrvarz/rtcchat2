@@ -21,7 +21,7 @@ var webrootCallee = "html/callee"
 
 func CalleeService(secure bool, sigport int) {
 	fmt.Println(TAG3, "start...")
-    calleeServeMux := http.NewServeMux()
+	calleeServeMux := http.NewServeMux()
 
 	// handle serving the rtcchat.js template
 	templFile := "/rtccallee.js"
@@ -38,10 +38,10 @@ func CalleeService(secure bool, sigport int) {
 		templFilePath := fmt.Sprintf("%s%s", webrootCallee, templFile)
 		htmlTempl := template.Must(template.ParseFiles(templFilePath))
 		type PatchInfo struct {
-			SigPort  int
+			SigPort        int
 			SecureRedirect bool
 		}
-		patchInfo := PatchInfo{sigport,secure}
+		patchInfo := PatchInfo{sigport, secure}
 		htmlTempl.Execute(w, patchInfo)
 	})
 
@@ -58,50 +58,50 @@ func CalleeService(secure bool, sigport int) {
 		}
 
 		//fmt.Println(TAG, "serve r.URL.Path", r.URL.Path)
-		if(r.URL.Path=="" || r.URL.Path=="/" || r.URL.Path=="/index.html") {
-			redir := "/"+webrootCallee+"/index.html"
-			// TODO: here we want to offer a tool to generate private + public URL's for the callee			
-			fmt.Println(TAG,"redir", redir," *** MUST OFFER TOOL TO GENERATE URL's ***")
-			http.Redirect(w,r,redir,http.StatusMovedPermanently)
+		if r.URL.Path == "" || r.URL.Path == "/" || r.URL.Path == "/index.html" {
+			redir := "/" + webrootCallee + "/index.html"
+			// TODO: here we want to offer a tool to generate private + public URL's for the callee
+			fmt.Println(TAG, "redir", redir, " *** MUST OFFER TOOL TO GENERATE URL's ***")
+			http.Redirect(w, r, redir, http.StatusMovedPermanently)
 
-		} else if(strings.HasPrefix(r.URL.Path,"/callee:")) {
+		} else if strings.HasPrefix(r.URL.Path, "/callee:") {
 			privatKey := r.RequestURI[8:]
 			key := privatKey
 
 			// TODO: need to convert from private-callee-key to public-callee-key (using mgo)
-			switch(privatKey) {
-			    case "f3e2-01d2-1f66-0cd3":     // tm
-        			key = "4a-5g-9a-21"
-			    case "01d2-f3e2-d332-164d":     // ulrich
-        			key = "52-14-a4-67"
-			    case "e6a2-dde2-d1f2-1622":     // tm for usbrom n7
-        			key = "12-4d-c4-16"
-			    case "d9a6-c4e4-2231-8a3d":     // nick
-        			key = "23-54-d5-2c"
-            }
+			switch privatKey {
+			case "f3e2-01d2-1f66-0cd3": // tm
+				key = "4a-5g-9a-21"
+			case "01d2-f3e2-d332-164d": // ulrich
+				key = "52-14-a4-67"
+			case "e6a2-dde2-d1f2-1622": // tm for usbrom n7
+				key = "12-4d-c4-16"
+			case "d9a6-c4e4-2231-8a3d": // nick
+				key = "23-54-d5-2c"
+			}
 
 			// hand over key by patching callee/index.html
-			// so that rtccallee.js can send back the key via websocket "announce" 
+			// so that rtccallee.js can send back the key via websocket "announce"
 			// for CalleeMap[key] = cws (see below)
 			type PatchInfo struct {
 				Key string
 			}
 			patchInfo := PatchInfo{key} // key = public-callee-key
-			pathToIndex := webrootCallee+"/index.html"
-			fmt.Println(TAG,"patchInfo=", patchInfo, "serve=",pathToIndex)
+			pathToIndex := webrootCallee + "/index.html"
+			fmt.Println(TAG, "patchInfo=", patchInfo, "serve=", pathToIndex)
 			homeTempl := template.Must(template.ParseFiles(pathToIndex))
 			homeTempl.Execute(w, patchInfo)
 
 		} else {
-			redir := "/html"+r.RequestURI
-			fmt.Println(TAG,"redir", redir)
-			http.Redirect(w,r,redir,http.StatusMovedPermanently)
+			redir := "/html" + r.RequestURI
+			fmt.Println(TAG, "redir", redir)
+			http.Redirect(w, r, redir, http.StatusMovedPermanently)
 		}
 	})
 
 	localAddr := fmt.Sprintf(":%d", sigport+1)
 	var err3 error = nil
-	if(secure) {
+	if secure {
 		fmt.Println(TAG3, "ListenAndServeTLS", localAddr)
 		err3 = http.ListenAndServeTLS(localAddr, certFile, keyFile, calleeServeMux)
 	} else {
@@ -161,14 +161,14 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 			callerKey = msg["uniqueID"]
 			CalleeMap[callerKey] = cws
 			// callerService.go will find cws entry in CalleeMap[] in: case "call":
-			// TODO: this way we CANNOT have a callee be registered on multiple devices in parallel 
-			fmt.Println(TAG3, "WsSessionHandlerCallee user with key is now registered:",callerKey)
-			msg := "you have been registered for caller id="+callerKey
+			// TODO: this way we CANNOT have a callee be registered on multiple devices in parallel
+			fmt.Println(TAG3, "WsSessionHandlerCallee user with key is now registered:", callerKey)
+			msg := "you have been registered for caller id=" + callerKey
 			websocket.Message.Send(cws, fmt.Sprintf(`{"command":"info","msg": "%s"}`, msg))
 		}
 	}
 
-	if(callerKey!="") {
+	if callerKey != "" {
 		CalleeMap[callerKey] = ""
 	}
 
@@ -183,4 +183,3 @@ func generateId() string {
 	}
 	return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4())
 }
-

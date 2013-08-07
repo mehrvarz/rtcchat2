@@ -15,12 +15,12 @@ import (
 var TAG5 = "UdpProxy"
 
 var udpConns = make(map[string]*net.UDPConn, 1000)
-var runningThreads = 0  // for debugging only
+var runningThreads = 0 // for debugging only
 
 func UdpProxy(hostAddr string, addr string, port string, sessionNumber int, proxyNumber int) (*net.UDPAddr, error) {
-    srcaddr := hostAddr+":"+port
-    target := addr+":"+port
-    proxyname := fmt.Sprintf("T%d/%d", sessionNumber, proxyNumber)
+	srcaddr := hostAddr + ":" + port
+	target := addr + ":" + port
+	proxyname := fmt.Sprintf("T%d/%d", sessionNumber, proxyNumber)
 
 	// start listen on some UDP port
 	laddr, err := net.ResolveUDPAddr("udp4", srcaddr)
@@ -49,11 +49,11 @@ func UdpProxyWorker(c *net.UDPConn, target string, sessionNumber int, proxyNumbe
 	runningThreads++
 	fmt.Println(TAG5, proxyname, "UdpProxyWorker targetaddr runningThreads", targetaddr, runningThreads)
 
-    udpConnName := fmt.Sprintf("%d-%d-%d", sessionNumber,proxyNumber,0)
+	udpConnName := fmt.Sprintf("%d-%d-%d", sessionNumber, proxyNumber, 0)
 	udpConns[udpConnName] = c
-	fmt.Println(TAG5, proxyname, "########## STORED udpConns[]",udpConnName)
+	fmt.Println(TAG5, proxyname, "########## STORED udpConns[]", udpConnName)
 
-    // enable read timeout only for first read
+	// enable read timeout only for first read
 	c.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 	var clientSourceAddr *net.UDPAddr = nil
@@ -65,7 +65,7 @@ func UdpProxyWorker(c *net.UDPConn, target string, sessionNumber int, proxyNumbe
 		//fmt.Println(TAG5,proxyname,"Read...",c.LocalAddr().String())
 		var buf [16240]byte
 		l, srcaddr, erd := c.ReadFromUDP(buf[0:])
-		if erd != nil {		
+		if erd != nil {
 			fmt.Println(TAG5, proxyname, "c.ReadFromUDP err", erd)
 			retError = erd
 
@@ -73,34 +73,34 @@ func UdpProxyWorker(c *net.UDPConn, target string, sessionNumber int, proxyNumbe
 			// TODO: only if erd.Error() contains "connection refused" - not on "address already in use"
 			// TODO: tear down the partner threads of this session now
 			i := 0
-            udpConnName = fmt.Sprintf("%d-%d-%d", sessionNumber,i,0)
-            _,ok := udpConns[udpConnName]
-            for ok {
-        		fmt.Println(TAG5, proxyname, "########## FOUND udpConns[]",udpConnName)
-        		udpConns[udpConnName].Close()
-        		udpConns[udpConnName] = nil
-                udpConnName = fmt.Sprintf("%d-%d-%d", sessionNumber,i,1)
-                _,ok = udpConns[udpConnName]
-                if(ok) {
-            		fmt.Println(TAG5, proxyname, "########## FOUND udpConns[]",udpConnName)
-            		udpConns[udpConnName].Close()
-            		udpConns[udpConnName] = nil
-                }
+			udpConnName = fmt.Sprintf("%d-%d-%d", sessionNumber, i, 0)
+			_, ok := udpConns[udpConnName]
+			for ok {
+				fmt.Println(TAG5, proxyname, "########## FOUND udpConns[]", udpConnName)
+				udpConns[udpConnName].Close()
+				udpConns[udpConnName] = nil
+				udpConnName = fmt.Sprintf("%d-%d-%d", sessionNumber, i, 1)
+				_, ok = udpConns[udpConnName]
+				if ok {
+					fmt.Println(TAG5, proxyname, "########## FOUND udpConns[]", udpConnName)
+					udpConns[udpConnName].Close()
+					udpConns[udpConnName] = nil
+				}
 
-        		i++
-                udpConnName = fmt.Sprintf("%d-%d-%d", sessionNumber,i,0)
-                _,ok = udpConns[udpConnName]
-        	}
+				i++
+				udpConnName = fmt.Sprintf("%d-%d-%d", sessionNumber, i, 0)
+				_, ok = udpConns[udpConnName]
+			}
 			break
 		}
-		
+
 		//fmt.Println(TAG5,proxyname,"write len",idx,"\n",hex.Dump(buf[0:l]))  // import "encoding/hex"
 
 		if l > 0 {
 			fmt.Println(TAG5, proxyname, "c.ReadFromUDP srcaddr len", srcaddr, l) //,buf[0:l])
 
-            // extend timeout very generously from now on
-        	c.SetReadDeadline(time.Now().Add(60*60*3 * time.Second))    // 3 hours
+			// extend timeout very generously from now on
+			c.SetReadDeadline(time.Now().Add(60 * 60 * 3 * time.Second)) // 3 hours
 
 			if srcaddr.Port != targetaddr.Port {
 				// if we receive data NOT from our target (this is our client), we forward it to our target
@@ -117,8 +117,8 @@ func UdpProxyWorker(c *net.UDPConn, target string, sessionNumber int, proxyNumbe
 					if erx != nil {
 						fmt.Println(TAG5, proxyname, "DialUDP err", erx)
 						// TODO: happens frequently: "udp 46.115.54.228:59971: address already in use"
-						if strings.Index(erx.Error(),"address already in use")>=0 {
-						    // this is expected
+						if strings.Index(erx.Error(), "address already in use") >= 0 {
+							// this is expected
 						}
 						c.Close()
 						c = nil
@@ -126,15 +126,15 @@ func UdpProxyWorker(c *net.UDPConn, target string, sessionNumber int, proxyNumbe
 						break
 					}
 
-                    udpConnName := fmt.Sprintf("%d-%d-1", sessionNumber,proxyNumber)
-		            _,ok := udpConns[udpConnName]
-		            if(!ok) {
-                		udpConns[udpConnName] = c2
-                		fmt.Println(TAG5, proxyname, "########## STORED udpConns[]",udpConnName)
-                	}
+					udpConnName := fmt.Sprintf("%d-%d-1", sessionNumber, proxyNumber)
+					_, ok := udpConns[udpConnName]
+					if !ok {
+						udpConns[udpConnName] = c2
+						fmt.Println(TAG5, proxyname, "########## STORED udpConns[]", udpConnName)
+					}
 
-					fmt.Println(TAG5, proxyname, "DialUDP c2.LocalAddr c2.RemoteAddr", 
-									c2.LocalAddr(), c2.RemoteAddr())
+					fmt.Println(TAG5, proxyname, "DialUDP c2.LocalAddr c2.RemoteAddr",
+						c2.LocalAddr(), c2.RemoteAddr())
 
 				} /*else if(srcaddr!=clientSourceAddr && srcaddr!=targetaddr) {
 				    // this is for safety, so that our UDP connection cannot be deranged by some 3rd parties

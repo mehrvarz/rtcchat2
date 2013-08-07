@@ -17,8 +17,8 @@ import (
 )
 
 var TAG = "CallerService"
-var	certFile = "keys/cert.pem"
-var	keyFile  = "keys/key.pem"
+var certFile = "keys/cert.pem"
+var keyFile = "keys/key.pem"
 
 // CalleeMap maps the public callee-key to the calle-websocketConn-handle
 var maxCallees = 1000
@@ -39,10 +39,10 @@ func ckeckKeys() {
 }
 
 func CallerService(secure bool, callerport int) {
-    callerServeMux := http.NewServeMux()
+	callerServeMux := http.NewServeMux()
 
 	fmt.Println(TAG, "start...")
-	if(secure) {
+	if secure {
 		ckeckKeys()
 	}
 
@@ -58,7 +58,7 @@ func CallerService(secure bool, callerport int) {
 		}
 
 		//fmt.Println(TAG, "serve r.URL.Path", r.URL.Path)
-		if(strings.HasPrefix(r.URL.Path,"/call:")) {
+		if strings.HasPrefix(r.URL.Path, "/call:") {
 			key := r.RequestURI[6:]
 			_, ok := CalleeMap[key]
 			if !ok {
@@ -68,7 +68,7 @@ func CallerService(secure bool, callerport int) {
 				select {
 				case <-time.After(3 * time.Second):
 					type PatchInfo struct {
-						Key   string
+						Key string
 					}
 					patchInfo := PatchInfo{key}
 					htmlTempl := template.Must(template.ParseFiles("html/callee-unavailable/index.html"))
@@ -81,24 +81,24 @@ func CallerService(secure bool, callerport int) {
 			fmt.Println(TAG, "user with key is online:", key)
 			// open html-form to allow caller to enter his own name
 			type PatchInfo struct {
-				Key string
+				Key   string
 				Title string
 			}
-			patchInfo := PatchInfo{key,"Calling rtc chat user: "+key}	
-			fmt.Println(TAG,"patchInfo", patchInfo, "serve 'html/caller-enter-name/index.html' ...")
+			patchInfo := PatchInfo{key, "Calling rtc chat user: " + key}
+			fmt.Println(TAG, "patchInfo", patchInfo, "serve 'html/caller-enter-name/index.html' ...")
 			homeTempl := template.Must(template.ParseFiles("html/caller-enter-name/index.html"))
 			homeTempl.Execute(w, patchInfo)
 
 		} else {
-			redir := "/html"+r.RequestURI
-			fmt.Println(TAG,"redir", redir)
-			http.Redirect(w,r,redir,http.StatusMovedPermanently)
+			redir := "/html" + r.RequestURI
+			fmt.Println(TAG, "redir", redir)
+			http.Redirect(w, r, redir, http.StatusMovedPermanently)
 		}
 	})
 
 	localAddr := fmt.Sprintf(":%d", callerport)
 	var err2 error = nil
-	if(secure) {
+	if secure {
 		fmt.Println(TAG, "ListenAndServeTLS", localAddr)
 		err2 = http.ListenAndServeTLS(localAddr, certFile, keyFile, callerServeMux)
 	} else {
@@ -148,37 +148,37 @@ func WsSessionHandlerCaller(cws *websocket.Conn, doneWsSessionHandler chan bool)
 			}
 
 		case "call":
-			// caller-enter-name.js is sending us: caller-username + callee-key 
+			// caller-enter-name.js is sending us: caller-username + callee-key
 			callerName := msg["name"]
 			calleeKey := msg["key"]
 			linkType := msg["linktype"]
-			fmt.Println(TAG,"call callerName=",callerName," calleeKey=",calleeKey," linkType",linkType)
+			fmt.Println(TAG, "call callerName=", callerName, " calleeKey=", calleeKey, " linkType", linkType)
 
 			// get callee-cws via callee-key
 			// TODO: it would be nice to support multiple calleeKey entries in CalleeMap[]
 			// and send all of them the links below
 			calleeCws, ok := CalleeMap[calleeKey]
 			if !ok {
-				fmt.Println(TAG,"key not found:",calleeKey)
+				fmt.Println(TAG, "key not found:", calleeKey)
 				//http.Error(w, "key not found", 405)	// TODO?
 				return
 			}
 
 			// notify callee (via cws) of incoming call from caller-username
-			// this will offer the callee a link to answer the call 
+			// this will offer the callee a link to answer the call
 			// and it will make the callee's browser start ringing
 			uniqueRoomName := generateId()
-			err := websocket.Message.Send(calleeCws, 
-					fmt.Sprintf(`{"command":"newRoom","callerName": "%s", "roomName": "%s", "linkType": "%s"}`, 
-					callerName, uniqueRoomName,linkType))
+			err := websocket.Message.Send(calleeCws,
+				fmt.Sprintf(`{"command":"newRoom","callerName": "%s", "roomName": "%s", "linkType": "%s"}`,
+					callerName, uniqueRoomName, linkType))
 			if err != nil {
 				fmt.Println(TAG3, "WsSessionHandlerCaller connect: websocket.Message.Send err:", err)
 			} else {
 				fmt.Println(TAG3, "WsSessionHandlerCaller connect: websocket.Message.Send done")
 				// callee now has a unique link to the signaling service session
 
-				websocket.Message.Send(cws, 
-						fmt.Sprintf(`{"command":"newRoom", "roomName": "%s"}`, uniqueRoomName))
+				websocket.Message.Send(cws,
+					fmt.Sprintf(`{"command":"newRoom", "roomName": "%s"}`, uniqueRoomName))
 
 				// we can now end the caller websocket session
 				quit = true
@@ -189,4 +189,3 @@ func WsSessionHandlerCaller(cws *websocket.Conn, doneWsSessionHandler chan bool)
 	fmt.Println(TAG, "WsSessionHandlerCaller done")
 	doneWsSessionHandler <- true
 }
-
