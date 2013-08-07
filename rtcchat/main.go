@@ -1,5 +1,7 @@
 // rtcchat2
 // Copyright 2013 Timur Mehrvarz. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 package main
 
@@ -24,15 +26,15 @@ func main() {
 	}
 	flag.Parse()
 
-	fmt.Println("secureRedirect",*secureRedirect)
 	fmt.Println("sigport",*sigport)
 	fmt.Println("callerport",*callerport)
+	fmt.Println("stunport",*stunport)
 
 	// StunUDP (default port 19253 = stunport)
 	go rtcchat2.StunUDP(*stunhost,*stunport)
 
-	// RtcSignaling (default port 8077)
-	// makes use of "html/signaling/*" = sigport
+	// RtcSignaling (default port 8077 = sigport)
+	// makes use of "html/signaling/*"
 	go rtcchat2.RtcSignaling(true,*sigport,*stunport,*stunhost,*ringtone)
 
 	// CalleeService (default port 8078 = sigPort+1) allows a callee to wait for and receive chat calls
