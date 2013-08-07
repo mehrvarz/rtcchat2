@@ -127,7 +127,7 @@ function connectToAdminServer() {
 			// which will end up below at "stopRing"
 			console.log("stopRing");
        	    document.getElementById('audiotag').pause();
-           	writeToChatLog("chat call was handled", "text-success");
+           	writeToChatLog("chat call was handled (or was ended)", "text-success");
 	        break;
 		}
     }

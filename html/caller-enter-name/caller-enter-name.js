@@ -63,7 +63,8 @@ function connectToCallerService() {
 			break;
 
 		case "newRoom":
-		    // callerService.go telling us to switch to rtcSignaling.go/rtcchat.js
+		    // the callee has agreed to answer our call
+		    // callerService.go is telling us to switch to rtcSignaling.go/rtcchat.js
 			var roomName = data.roomName;
 			console.log("newRoom: roomName="+roomName);
 			if(roomName!="") {
