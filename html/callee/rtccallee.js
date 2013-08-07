@@ -1,5 +1,7 @@
-// rtcadmin.js
+// rtcchat rtccallee.js
 // Copyright 2013 Timur Mehrvarz <timur.mehrvarz@riseup.net>
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 var host;
 var wsPort = {{.SigPort}}; 		   // default=8077, will be patched by rtcSignaling.go service
@@ -9,7 +11,6 @@ var socket = null;
 var lastServerAction = 0;
 
 $(function(){
-	// init
 	host = location.hostname;
     console.log("start: host="+host+" wsAdminPort="+wsAdminPort);
 	connectToAdminServer();
@@ -57,12 +58,10 @@ function connectToAdminServer() {
 	}
     socket.onmessage = function(m) { 
         var data = JSON.parse(m.data);
-    	//console.log("socket message raw:", data);
     	
     	switch(data.command) {
 		case "alive!":
 			// this is the host confirming connect or alive
-			//console.log("connect:");
 			// reset heartbeat timeout
 			lastServerAction = new Date().getTime();
 			break;

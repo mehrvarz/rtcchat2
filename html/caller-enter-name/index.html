@@ -53,8 +53,6 @@
   </div>
 </div>
 
-<!--audio id="audiotag" src="KzurbSonar.wav" preload="auto"></audio-->
-
 <style type="text/css">
 label {
     display: block;
@@ -72,6 +70,8 @@ input {
 </style>
 <script>
 var key = "{{.Key}}";
+var wsPort = {{.SigPort}}; 		   // default=8077
+var wsCallerPort = {{.CallerPort}};    // default=8000
 </script>
 <script src="/html/caller-enter-name/caller-enter-name.js"></script>
 </body>

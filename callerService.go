@@ -38,7 +38,7 @@ func ckeckKeys() {
 	}
 }
 
-func CallerService(secure bool, callerport int) {
+func CallerService(secure bool, callerport int, sigport int) {
 	callerServeMux := http.NewServeMux()
 
 	fmt.Println(TAG, "start...")
@@ -83,8 +83,10 @@ func CallerService(secure bool, callerport int) {
 			type PatchInfo struct {
 				Key   string
 				Title string
+				SigPort int
+				CallerPort int
 			}
-			patchInfo := PatchInfo{key, "Calling rtc chat user: " + key}
+			patchInfo := PatchInfo{key, "Calling rtc chat user: " + key, sigport, callerport}
 			fmt.Println(TAG, "patchInfo", patchInfo, "serve 'html/caller-enter-name/index.html' ...")
 			homeTempl := template.Must(template.ParseFiles("html/caller-enter-name/index.html"))
 			homeTempl.Execute(w, patchInfo)

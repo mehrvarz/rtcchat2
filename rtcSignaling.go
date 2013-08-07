@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// rtcSignaling is our Websocket rendezvous server
+// rtcSignaling implements a Websocket rendezvous server
 
 package rtcchat2
 
@@ -17,7 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
+	//"syscall"
 	"text/template"
 	"time"
 )
@@ -196,13 +196,15 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 					fmt.Sprintf(`{"command":"roomclients", "room":"%s", "clients":[]}`, roomName))
 				if err1 != nil {
 					fmt.Println(TAG2, "WsSessionHandler subscribe: websocket.Message.Send", err1)
-				} else {
+				} 
+				/* ringtoneFile only needed for local (at home) deployment
+				else {
 					if ringtoneFile != "" {
 						fmt.Println(TAG2, "WsSessionHandler subscribe: play ringtoneFile", ringtoneFile)
 						newRoomCmd = exec.Command("play", ringtoneFile, "repeat", "8")
 						go waitForCmd(&newRoomCmd, abortCmdChan)
 					}
-				}
+				}*/
 
 				// store abortCmdChan and newRoomCmd in roomInfo, so WsSessionHandler of user 2 can stop ringing
 				r.abortCmdChan = abortCmdChan
@@ -456,6 +458,7 @@ func sendConsoleMessage(cws *websocket.Conn, otherCws *websocket.Conn, msg strin
 	}
 }
 
+/*
 func waitForCmd(cmd **exec.Cmd, abortCmdChan <-chan bool) {
 	// as long as the cmd is running, (*cmd) is not null
 	// (*cmd) can be killed from outside by: abortCmdChan <- true
@@ -488,3 +491,4 @@ func waitForCmd(cmd **exec.Cmd, abortCmdChan <-chan bool) {
 		fmt.Println(TAG2, "waitForCmd cmd.Start() failed", err)
 	}
 }
+*/

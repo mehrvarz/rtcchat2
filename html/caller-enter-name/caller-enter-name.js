@@ -1,22 +1,21 @@
-// rtcadmin.js
+// rtc chat caller-enter-name.js
 // Copyright 2013 Timur Mehrvarz <timur.mehrvarz@riseup.net>
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 var host;
-var wsPort = 8077; //{{.SigPort}}; 		   // default=8077, will be patched by rtcSignaling.go service
-var wsAdminPort = 8000; //{{.SigPort}} +1; // default=8078, will be patched by rtcSignaling.go service
 var socket = null;
 var lastServerAction = 0;
 
 $(function(){
 	host = location.hostname;
     console.log("start: host",host);
-    console.log("start: wsAdminPort:",wsAdminPort," key:",key);
-	connectToAdminServer();
+    console.log("start: wsCallerPort:",wsCallerPort," key:",key);
+	connectToCallerService();
 });
 
-function connectToAdminServer() {
-	// try to connect to admin server
-    var hostAddr = host+":"+wsAdminPort;
+function connectToCallerService() {
+    var hostAddr = host+":"+wsCallerPort;
     var	socketServerAddress;
 	if(window.location.href.indexOf("https://")==0)
 		socketServerAddress = "wss://"+hostAddr+"/ws";
@@ -27,7 +26,7 @@ function connectToAdminServer() {
     if(!socket) {
 	    console.log("failed to connect to admin server",hostAddr);
 		window.setTimeout(function(){
-			connectToAdminServer();
+			connectToCallerService();
 		},2000);
 	}
     console.log("connected to admin server "+hostAddr);

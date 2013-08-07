@@ -43,7 +43,7 @@ func main() {
 
 	// CallerService (default port 8000 = callerport) allows other clients to "call" admin clients
 	// makes use of "html/caller-enter-name/*" and "html/callee-unavailable/*"
-	go rtcchat2.CallerService(*secureRedirect, *callerport)
+	go rtcchat2.CallerService(*secureRedirect, *callerport, *sigport)
 
 	// let services run til aborted
 	select {}
