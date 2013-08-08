@@ -146,6 +146,7 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 			}
 
 		case "announce":
+			// rtccallee.js: announce callee's availability for incoming calls
 			callerKey = msg["uniqueID"]
 			CalleeMap[callerKey] = cws
 			// callerService.go will find cws entry in CalleeMap[] in: case "call":
@@ -157,7 +158,8 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 	}
 
 	if callerKey != "" {
-		CalleeMap[callerKey] = nil
+		// unregister callee
+		delete(CalleeMap,callerKey)
 	}
 
 	fmt.Println(TAG3, "WsSessionHandlerCallee done")
