@@ -65,28 +65,16 @@ func CalleeService(secure bool, sigport int) {
 			http.Redirect(w, r, redir, http.StatusMovedPermanently)
 
 		} else if strings.HasPrefix(r.URL.Path, "/callee:") {
-			privatKey := r.RequestURI[8:]
-			key := privatKey
+			calleeKey := r.RequestURI[8:]
+			callerKey := getPersistedCallerKey(calleeKey)
 
-			// TODO: need to convert from private-callee-key to public-callee-key (using mgo)
-			switch privatKey {
-			case "f3e2-01d2-1f66-0cd3": // tm
-				key = "4a-5g-9a-21"
-			case "01d2-f3e2-d332-164d": // ulrich
-				key = "52-14-a4-67"
-			case "e6a2-dde2-d1f2-1622": // tm for usbrom n7
-				key = "12-4d-c4-16"
-			case "d9a6-c4e4-2231-8a3d": // nick
-				key = "23-54-d5-2c"
-			}
-
-			// hand over key by patching callee/index.html
-			// so that rtccallee.js can send back the key via websocket "announce"
-			// for CalleeMap[key] = cws (see below)
+			// hand over callerKey by patching callee/index.html
+			// so that rtccallee.js can send back the callerKey via websocket "announce"
+			// for CalleeMap[callerKey] = cws (see below)
 			type PatchInfo struct {
 				Key string
 			}
-			patchInfo := PatchInfo{key} // key = public-callee-key
+			patchInfo := PatchInfo{callerKey} // callerKey = public-callee-key
 			pathToIndex := webrootCallee + "/index.html"
 			fmt.Println(TAG, "patchInfo=", patchInfo, "serve=", pathToIndex)
 			homeTempl := template.Must(template.ParseFiles(pathToIndex))
