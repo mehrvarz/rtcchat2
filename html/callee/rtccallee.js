@@ -5,38 +5,38 @@
 
 var host;
 var wsPort = {{.SigPort}}; 		   // default=8077, will be patched by rtcSignaling.go service
-var wsAdminPort = {{.SigPort}} +1; // default=8078, will be patched by rtcSignaling.go service
+var wsCalleePort = {{.SigPort}} +1; // default=8078, will be patched by rtcSignaling.go service
 var secureRedirect = {{.SecureRedirect}}
 var socket = null;
 var lastServerAction = 0;
 
 $(function(){
 	host = location.hostname;
-    console.log("start: host="+host+" wsAdminPort="+wsAdminPort);
-	connectToAdminServer();
+    console.log("start: host="+host+" wsCalleePort="+wsCalleePort);
+	connectToCalleeService();
 });
 
-function connectToAdminServer() {
-	// try to connect to admin server
-    var hostAddr = host+":"+wsAdminPort;
+function connectToCalleeService() {
+	// try to connect to callee service
+    var hostAddr = host+":"+wsCalleePort;
     var	socketServerAddress;
 	if(window.location.href.indexOf("https://")==0)
 		socketServerAddress = "wss://"+hostAddr+"/ws";
 	else
 		socketServerAddress = "ws://"+hostAddr+"/ws";
-    console.log("connecting to admin server",hostAddr);
-    writeToChatLog("connecting to admin server "+hostAddr+" ...", "text-success");
+    console.log("connecting to callee service",hostAddr);
+    writeToChatLog("connecting to callee service "+hostAddr+" ...", "text-success");
     socket = new WebSocket(socketServerAddress);
     if(!socket) {
-	    console.log("failed to connect to admin server",hostAddr);
+	    console.log("failed to connect to callee service",hostAddr);
 		window.setTimeout(function(){
-			connectToAdminServer();
+			connectToCalleeService();
 		},2000);
 	}
 
 	socket.onopen = function () {
-	    console.log("connected to admin server",hostAddr);
-	    writeToChatLog("connected to admin server "+hostAddr, "text-success");
+	    console.log("connected to callee service",hostAddr);
+	    writeToChatLog("connected to callee service "+hostAddr, "text-success");
 
 		lastServerAction = new Date().getTime();
 	    // start heartbeat (send "alive?" requests, if last "connect" is older than)
@@ -50,10 +50,10 @@ function connectToAdminServer() {
 	};
 
 	socket.onerror = function () {
-	    console.log("failed to connect to admin server",hostAddr);
+	    console.log("failed to connect to callee service",hostAddr);
         writeToChatLog("failed to create websocket connection", "text-success");
 		window.setTimeout(function(){
-			connectToAdminServer();
+			connectToCalleeService();
 		},3000);
 	}
     socket.onmessage = function(m) { 
@@ -145,13 +145,13 @@ function checkHeartBeats() {
 		var timeSinceLastServerAction = new Date().getTime() - lastServerAction;
 		if(timeSinceLastServerAction>6000) {
 			// must reconnect
-		    console.log("disconnected from admin server");
-			connectToAdminServer();
+		    console.log("disconnected from callee service");
+			connectToCalleeService();
 			return;
 		}
 		
 		if(timeSinceLastServerAction>3000) {
-		    console.log("check if admin server still alive...");
+		    console.log("check if callee service is still alive...");
 	    	socket.send(JSON.stringify({command:'alive?'}));
 		}
 		checkHeartBeats();
