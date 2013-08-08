@@ -1,4 +1,4 @@
-// rtc chat caller-enter-name.js
+// rtcchat2 caller-enter-name.js
 // Copyright 2013 Timur Mehrvarz <timur.mehrvarz@riseup.net>
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -96,13 +96,12 @@ function checkHeartBeats() {
 }
 
 $('#callBtn').click(function() {
-    // user has entered a room name
+	// caller has entered her name
     makeCall()
 });
 
 function makeCall() {
-	// caller has entered his name
-	// we need to offer callee and allow him to answer the incoming call
+	// make callee aware and allow her to answer the incoming call
     var username = $('#roomName').val();
     var linktype = "relayed";
 	if($('#linktyp').is(':checked')) {

@@ -1,5 +1,7 @@
-// rtcchat.js
+// rtcchat2 rtcchat.js
 // Copyright 2013 Timur Mehrvarz <timur.mehrvarz@riseup.net>
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 var con = {'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true }] };
 var websocket = null,
