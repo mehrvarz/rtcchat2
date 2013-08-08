@@ -28,6 +28,7 @@ function init() {
     if(stunHost=="") {
       stunHost = host;
     }
+    linkType = "relayed"
     console.log("start: host/stunHost",host,stunHost);
 
     var wsPort = {{.SigPort}};    // default=8077
@@ -47,14 +48,16 @@ function init() {
 	    roomName = getUrlParameter('room');
 		key = getUrlParameter('key');
 		calleeKey = getUrlParameter('calleeKey');
-        linkType = getUrlParameter('linktype');
+        linkType = getUrlParameter('linktype');	// if given, this is the callee linkType
+        if(!linkType) linkType="relayed"
 	    console.log("start: roomName="+roomName+" key="+key+" calleeKey="+calleeKey+" linkType="+linkType);
 
         if(!roomName) {
         	// roomName was NOT given by URL parameter; getRoomName -> #setRoomBtn
 		    console.log("start: no roomName parameter");
-		    $('#roomName').focus();
             $('#getRoomName').modal('show');
+		    $('#roomName').focus();
+		    $('#linktyp').prop('checked', false);
         } else {
             // roomName was given by URL parameter
             // when the websocket-connection is ready, auto-subscribe the room
@@ -112,14 +115,14 @@ function subscribeRoom(roomName) {
     // create a signaling room by subscribing the name
     // this is also being called directly from HTML
     if(websocket) {
-        if(linkType==null) linkType="relayed";
+		if($('#linktyp').is(':checked')) {
+			// caller-requested linkType
+			linkType = "p2p";
+		}   
 	    console.log("subscribe to roomName="+roomName+" linkType="+linkType);
-        // TODO: let server know if relayed messaging was requested
     	websocket.send(JSON.stringify({command:'subscribe', room: roomName, linkType:linkType}));
         console.log("sent subscription for roomName", roomName,"now wait-for-p2p-connection...");
         $('#waitForConnection').modal('show');
-		//document.getElementById('waitForConnection').style.display = 'visible';
-		//document.getElementById('waitForConnection').style.visibility = 'visible';
 
         // wait for the 2nd party to join this room (maybe we are the 2nd party)
         // this will happen in addClient()

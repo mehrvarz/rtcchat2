@@ -28,6 +28,7 @@ var ringtoneFile = ""
 type roomInfo struct {
 	clientId     string
 	cws          *websocket.Conn
+	linkType	 string
 	users        int
 	newRoomCmd   *exec.Cmd
 	abortCmdChan chan bool
@@ -167,7 +168,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 			}
 
 		case "subscribe":
-			// if a call comes in, rtcadmin.js will generate a link "incoming chat from..."
+			// if a call comes in, rtcCallee.js will generate a link "incoming chat from..."
 			// the callee, clicking on this link, will be forwarded to rtcchat.js
 			// (see: getUrlParameter('room') and subscribeRoom())
 			// from where roomName + linkType will be forwarded here
@@ -182,6 +183,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				fmt.Println(TAG2, "WsSessionHandler subscribe: new room=", roomName, "clientId=", myClientId)
 				var r roomInfo
 				r.clientId = myClientId
+				r.linkType = linkType
 				r.cws = cws
 				r.users = 1
 				abortCmdChan = make(chan bool)
@@ -218,7 +220,13 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				newRoomCmd = r.newRoomCmd
 				abortCmdChan = r.abortCmdChan
 				r.cws = cws
-				r.users = 2
+				r.users = 2			
+				if(linkType!=r.linkType) {
+					// if both clients disagree on the linkType, make both use relayed
+					fmt.Println(TAG2, "WsSessionHandler subscribe: linkType mismatch 2:"+linkType+" 1:"+r.linkType)
+					linkType="relayed"
+					r.linkType="relayed"
+				}			
 				roomInfoMap[roomName] = r
 
 				// TODO: send other clients serverRoutedMessaging state
@@ -258,6 +266,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				r, ok2 := roomInfoMap[roomName]
 				if ok2 {
 					otherCws = r.cws
+					linkType = r.linkType  // both clients use the same linkType now
 				}
 			}
 			//fmt.Println(TAG2,"WsSessionHandler messageForward: myClientId", myClientId)
