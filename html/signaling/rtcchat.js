@@ -51,6 +51,7 @@ function init() {
 		key = getUrlParameter('key');
 		calleeKey = getUrlParameter('calleeKey');
         linkType = getUrlParameter('linktype');	// if given, this is the callee linkType
+        if(!linkType) linkType = getUrlParameter('callerLinkType');	// if given, this is the caller linkType
         if(!linkType) linkType="relayed"
 	    console.log("start: roomName="+roomName+" key="+key+" calleeKey="+calleeKey+" linkType="+linkType);
 
@@ -659,7 +660,7 @@ function linkify(text) {
     // http://stackoverflow.com/questions/37684/how-to-replace-plain-urls-with-links
     // http://benalman.com/code/test/js-linkify/
     var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-    return text.replace(exp,"<a href='$1'>$1</a>"); 
+    return text.replace(exp,"<a href='$1' target='_blank'>$1</a>"); 
 }
 
 function receiveMessage(msg) {

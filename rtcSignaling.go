@@ -174,7 +174,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 			// from where roomName + linkType will be forwarded here
 			roomName = msg["room"]
 			linkType = msg["linkType"]
-			fmt.Println(TAG2, "WsSessionHandler subscribe: roomName", roomName, "linkType", linkType)
+			fmt.Println(TAG2, "WsSessionHandler subscribe: roomName="+roomName+" linkType="+linkType)
 
 			r, ok2 := roomInfoMap[roomName]
 			if !ok2 {

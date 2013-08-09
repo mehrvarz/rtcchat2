@@ -6,7 +6,7 @@
 var host;
 var wsPort = {{.SigPort}}; 		   // default=8077, will be patched by rtcSignaling.go service
 var wsCalleePort = {{.SigPort}} +1; // default=8078, will be patched by rtcSignaling.go service
-var secureRedirect = {{.SecureRedirect}}
+var secureCallee = {{.SecureRedirect}}
 var socket = null;
 var lastServerAction = 0;
 
@@ -83,7 +83,7 @@ function connectToCalleeService() {
 			lastServerAction = new Date().getTime();
 			if(roomName!="" && callerName!="") {
 				var prot = "http";
-				if(secureRedirect) 
+				if(secureCallee) 
 				    prot = "https";
 
 				// answer incoming call action

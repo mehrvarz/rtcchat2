@@ -42,7 +42,7 @@ function connectToCallerService() {
 	socket.onerror = function () {
 	    console.log("failed to connect to admin server",hostAddr);
 		window.setTimeout(function(){
-			connectToAdminServer();
+			connectToCallerService();
 		},3000);
 	}
     socket.onmessage = function(m) { 
@@ -66,11 +66,13 @@ function connectToCallerService() {
 		    // the callee has agreed to answer our call
 		    // callerService.go is telling us to switch to rtcSignaling.go/rtcchat.js
 			var roomName = data.roomName;
-			console.log("newRoom: roomName="+roomName);
+			var linkType = data.linkType;
+			console.log("newRoom: roomName="+roomName+" linkType="+linkType);
 			if(roomName!="") {
 			    // we send the key as calleeKey=, so that rtcchat.js can hand it over to rtcSignaling.go via forRing
 			    // so that in case this caller disappears, rtcSignaling.go can stop the ringing
-				window.location.href = "https://"+location.hostname+":"+wsPort+"/?room="+roomName+"&calleeKey="+key;
+				window.location.href = "https://"+location.hostname+":"+wsPort+
+					"/?room="+roomName+"&calleeKey="+key+"&callerLinkType="+linkType;
 			}
 			break;
 		}
@@ -83,7 +85,7 @@ function checkHeartBeats() {
 		if(timeSinceLastServerAction>6000) {
 			// must reconnect
 		    console.log("disconnected from admin server");
-			connectToAdminServer();
+			connectToCallerService();
 			return;
 		}
 		

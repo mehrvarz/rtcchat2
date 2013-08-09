@@ -154,7 +154,7 @@ func WsSessionHandlerCaller(cws *websocket.Conn, doneWsSessionHandler chan bool)
 			callerName := msg["name"]
 			calleeKey := msg["key"]
 			linkType := msg["linktype"]
-			fmt.Println(TAG, "call callerName=", callerName, " calleeKey=", calleeKey, " linkType", linkType)
+			fmt.Println(TAG, "call callerName="+callerName+" calleeKey="+calleeKey+" linkType="+linkType)
 
 			// get callee-cws via callee-key
 			// TODO: it would be nice to support multiple calleeKey entries in CalleeMap[]
@@ -182,8 +182,9 @@ func WsSessionHandlerCaller(cws *websocket.Conn, doneWsSessionHandler chan bool)
 
                 // this will make the caller switch to rtcSignaling.go/rtcchat.js
                 // see: caller-enter-name.js: case "newRoom": 
-				websocket.Message.Send(cws,
-					fmt.Sprintf(`{"command":"newRoom", "roomName": "%s"}`, uniqueRoomName))
+                json := fmt.Sprintf(`{"command":"newRoom", "roomName": "%s", "linkType": "%s"}`, 
+						uniqueRoomName,linkType)
+				websocket.Message.Send(cws,json)
 				// we can now end this callers websocket session (we don't have to: EOF would come anyway)
 				quit = true
 			}
