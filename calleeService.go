@@ -61,7 +61,7 @@ func CalleeService(secure bool, sigport int) {
 		if r.URL.Path == "" || r.URL.Path == "/" || r.URL.Path == "/index.html" {
 			redir := "/" + webrootCallee + "/index.html"
 			// TODO: here we want to offer a tool to generate private + public URL's for the callee
-			fmt.Println(TAG, "redir", redir, " *** MUST OFFER TOOL TO GENERATE URL's ***")
+			fmt.Println(TAG, "redir", redir, " *** MUST OFFER TOOL TO GENERATE CALLEE/CALLER URL's ***")
 			http.Redirect(w, r, redir, http.StatusMovedPermanently)
 
 		} else if strings.HasPrefix(r.URL.Path, "/callee:") {

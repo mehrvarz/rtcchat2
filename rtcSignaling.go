@@ -314,7 +314,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				idx := strings.Index(messageString, "typ srflx")
 				if idx < 0 {
 					fmt.Println(TAG2, "NOT FOUND 'typ srflx'")
-					sendConsoleMessage(cws, otherCws, "linktype relayed failed: no srflx entries")
+					sendConsoleMessage(cws, otherCws, "no srflx entries - using P2P link")
 				} else {
 					substr := messageString[0:idx]
 					//fmt.Println(TAG2,"substr="+substr)
@@ -448,10 +448,12 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 	}
 
 	// send stop ringing in case caller has just disappeared
-	fmt.Println(TAG2, "WsSessionHandler end of session stopRing",otherCws)
 	if otherCws!=nil {
 		// this will be handled in rtccallee.js
+		fmt.Println(TAG2, "WsSessionHandler end of session stopRing")
 	    websocket.Message.Send(otherCws, `{"command":"stopRing"}`)
+	} else {
+		fmt.Println(TAG2, "WsSessionHandler end of session stopRing no otherCws")
 	}
 
 	if roomName != "" {
