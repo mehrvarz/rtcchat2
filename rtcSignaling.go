@@ -128,6 +128,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 	var roomName string
 	var linkType string
 	var otherCws *websocket.Conn = nil
+	var forRingCws *websocket.Conn = nil
 
 	err := websocket.Message.Send(cws, `{"command":"connect"}`)
 	if err != nil {
@@ -434,26 +435,26 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 			fmt.Println(TAG2, "WsSessionHandler forRing calleekey=", calleekey)
 			if calleekey != "" {
 			    var ok = false
-				otherCws, ok = CalleeMap[calleekey]
+				forRingCws, ok = CalleeMap[calleekey]
 				if !ok {
-				    otherCws = nil
+				    forRingCws = nil
 				}
             }
-			if otherCws==nil {
-    			fmt.Println(TAG2, "WsSessionHandler forRing no otherCws")
+			if forRingCws==nil {
+    			fmt.Println(TAG2, "WsSessionHandler forRing no forRingCws")
 			} else {
-    			fmt.Println(TAG2, "WsSessionHandler forRing otherCws set")
+    			fmt.Println(TAG2, "WsSessionHandler forRing forRingCws set")
 			}
 		}
 	}
 
 	// send stop ringing in case caller has just disappeared
-	if otherCws!=nil {
+	if forRingCws!=nil {
 		// this will be handled in rtccallee.js
 		fmt.Println(TAG2, "WsSessionHandler end of session stopRing")
-	    websocket.Message.Send(otherCws, `{"command":"stopRing"}`)
+	    websocket.Message.Send(forRingCws, `{"command":"stopRing"}`)
 	} else {
-		fmt.Println(TAG2, "WsSessionHandler end of session stopRing no otherCws")
+		fmt.Println(TAG2, "WsSessionHandler end of session stopRing no forRingCws")
 	}
 
 	if roomName != "" {
