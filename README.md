@@ -14,6 +14,8 @@ go get github.com/mehrvarz/rtcchat2
 
 go get github.com/steveyen/gkvlite
 
+cd $GOPATH/src/mehrvarz/rtcchat2
+
 go run rtcchat/gkvCreate.go
 
 ./run
