@@ -7,6 +7,13 @@ rtc chat establishes end-to-end encrypted, P2P and relayed communication links.
 
 More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
+Installation
+-------
+
+go get github.com/steveyen/gkvlite
+go get github.com/mehrvarz/rtcchat2
+go run rtcchat/gkvCreate.go
+
 License
 -------
 
@@ -15,6 +22,7 @@ This project uses code from:
 bootstrap.js: Copyright 2012 Twitter, Inc; Apache License, Version 2.0.<br/>
 jquery: Copyright jQuery Foundation and contributors; MIT License.<br/>
 adapter.js + serverless-webrtc.js: Copyright 2013 Chris Ball <chris@printf.net>.<br/>
+gkvlite: Copyright Steve Yen; MIT license.<br/>
 
 For the rest:
 
