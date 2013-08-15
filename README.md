@@ -12,19 +12,14 @@ Install and run service
 
 You should have Go 1.1 installed.
 
-	go get github.com/mehrvarz/rtcchat2
-
-	go get github.com/steveyen/gkvlite
-
-	cd $GOPATH/src/mehrvarz/rtcchat2
-
-	go run rtcchat/gkvCreate.go
-
-	./run
-
-*You also need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat
+You also need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat
 under "Create keys for WebSocket signaling over https"
 
+	go get github.com/mehrvarz/rtcchat2
+	go get github.com/steveyen/gkvlite
+	cd $GOPATH/src/mehrvarz/rtcchat2
+	go run rtcchat/gkvCreate.go
+	./run
 
 
 License
