@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Create keys</title>
+<script src="jquery-2.0.0.js"></script>
+<script src="bootstrap.min.js"></script>
+<link href="bootstrap.min.css" rel="stylesheet">
+<link href="bootstrap-responsive.min.css" rel="stylesheet">
+<style type="text/css">
+html,body {
+height: 100%; margin-left:0; margin-top:0; margin-right:0; padding:0;
+}
+body { 
+background: black url("moon.jpg");
+background-repeat: no-repeat;
+background-position: center;
+}
+</style>
+</head>
+
+<body>
+<div style="position:relative; top:35%;">
+  <div style="position:absolute; _height:10em; _margin-top:-5em; margin-left:20%; _width:100%; font-size:1.3em;">
+
+	<!--
+    Copy your callee URL:<br/>
+    <button style="width:420px;height:30px;margin-right:10px;margin-top:6px;" onClick="javascript:copyCallee()">
+    	<p id='calleeId'>Copy your callee URL</p>
+    </button><br/>
+    <br/>
+	-->
+
+	<p style="width:56%;">
+		Here you can activate a pair of custom rtc chat URL's. 
+		This will enable you to receive chat calls.
+	</p>
+	<p style="width:56%;">
+		This service works best in Firefox 22 (or better).
+	</p>
+	<p style="margin-top:30px; width:56%;">
+	    Step 1: Cut&Paste your caller URL. By using this URL, others will be able to contact you:
+	</p>
+    <button style="width:420px;height:30px;margin-right:10px;" onClick="javascript:copyCaller()">
+	    <p id="callerId">Copy your caller URL</p>
+    </button><br/>
+
+	<p style="margin-top:30px; margin-bottom:2px; width:70%;">
+		Step 2: Activate your callee URL:
+	</p>
+    <button id="acceptKeys" style="width:200px;height:30px;margin-top:6px;" onClick="javascript:activateKeys()">
+    	Activate callee
+    </button>
+  </div>
+</div>
+</body>
+
+<script>
+var calleeKey    = "{{.CalleeKey}}";
+var callerKey    = "{{.CallerKey}}";
+var keyKey       = "{{.KeyKey}}";
+var wsCalleePort =  {{.SigPort}} +1; // default=8078
+var wsCallerPort =  {{.CallerPort}}; // default=8000
+var secureCallee =  {{.SecureCallee}};
+</script>
+<script src="/html/callee-new-keys/callee-new-keys.js"></script>
+
+</html>
+

@@ -21,6 +21,7 @@ var certFile = "keys/cert.pem"
 var keyFile = "keys/key.pem"
 
 // CalleeMap maps the public callee-key to the calle-websocketConn-handle
+// only callee's that are online are mapped
 var maxCallees = 1000
 var CalleeMap = make(map[string]*websocket.Conn, maxCallees)
 

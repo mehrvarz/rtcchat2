@@ -6,7 +6,8 @@
 var host;
 var wsPort = {{.SigPort}}; 		   // default=8077, will be patched by rtcSignaling.go service
 var wsCalleePort = {{.SigPort}} +1; // default=8078, will be patched by rtcSignaling.go service
-var secureCallee = {{.SecureRedirect}}
+var secureCallee = {{.SecureCallee}};
+var autoAnswer = "{{.AutoAnswer}}";
 var socket = null;
 var lastServerAction = 0;
 
@@ -85,6 +86,15 @@ function connectToCalleeService() {
 				var prot = "http";
 				if(secureCallee) 
 				    prot = "https";
+
+				// autoAnswer
+				if(autoAnswer && callerName==autoAnswer) {
+					var url = prot+"://"+location.hostname+":"+wsPort+
+									"/?room="+roomName+"&key="+key+"&linktype=p2p";  // linkType: caller get's his way
+	            	writeToChatLog("auto-open new window", "text-success");
+					window.open(url,'_blank');
+					break;
+				}		
 
 				// answer incoming call action
 				// the following links will be processed in /html/callee/rtccallee.js
@@ -212,6 +222,7 @@ function sendMessage(msg) {
     return false;
 };
 
+/*
 function sendMessageFromForm() {
     //console.log("sendMessageFromForm() -> sendMessage()",$('#messageTextBox').val());
     sendMessage($('#messageTextBox').val());
@@ -220,6 +231,7 @@ function sendMessageFromForm() {
 $('#sendMessageBtn').click(function() {
     sendMessageFromForm();
 });
+*/
 
 function getTimestamp() {
     var totalSec = new Date().getTime() / 1000;

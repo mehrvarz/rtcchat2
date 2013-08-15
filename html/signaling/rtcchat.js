@@ -186,14 +186,14 @@ function pc1CreateDataChannel() {
 
 			if(websocket) {
 				// now is a good time to force disconnect from signaling server
-				window.setTimeout(function(){
-        			if(websocket) {
+				//window.setTimeout(function(){
+        		//	if(websocket) {
     				    console.log("messageForward: force websocket.close()");
     				    websocket.close();
     				    websocket = null;
     				    writeToChatLog("disconnected from signaling server", "text-success"); 
-    				}
-			    },330);
+    			//	}
+			    //},330);
 			}
         };
 
@@ -219,7 +219,7 @@ function pc1CreateDataChannel() {
 
         webrtcDataChannel.onmessage = function (e) {
             // msgs received by pc1
-            console.log("pc1 webrtcDataChannel.onmessage", e.data);
+            //console.log("pc1 webrtcDataChannel.onmessage");
             //if (e.data.size) {
             //    fileReceiver1.receive(e.data, {});
             //}
@@ -232,7 +232,8 @@ function pc1CreateDataChannel() {
             //        writeToChatLog(data.message, "text-info");
             //    }
             //}
-            receiveMessage(e.data);
+
+			receiveMessage(e.data);
         };
     } catch (e) { console.warn("pc1.createDataChannel exception", e); }
 }
@@ -319,14 +320,15 @@ function bindSocketEvents(){
 
 			                if(websocket) {
 				                // now is a good time to force disconnect from signaling server
-				                window.setTimeout(function(){
-                        			if(websocket) {
-                    				    console.log("messageForward: force websocket.close()");
+				                // do it with a small delay
+				                //window.setTimeout(function(){
+                        		//	if(websocket) {
+                    				    console.log("webrtcDataChannel.onopen: force websocket.close()");
                     				    websocket.close();
                     				    websocket = null;
                     				    writeToChatLog("disconnected from signaling server", "text-success"); 
-                    				}
-			                    },330);
+                    			//	}
+			                    //},330);
 			                }
 				        };
 
@@ -352,8 +354,7 @@ function bindSocketEvents(){
 
 				        webrtcDataChannel.onmessage = function (e) {
 				            // msgs received by user 2
-				            console.log("pc2 webrtcDataChannel.onmessage", e.data);
-
+				            //console.log("pc2 webrtcDataChannel.onmessage");
 						    //if (e.data.size) {
 						    //    fileReceiver2.receive(e.data, {});
 						    //}
@@ -415,7 +416,7 @@ function bindSocketEvents(){
 			case "roomclients":
 				// set the current room
 				currentRoom = data.room;
-				clientCount=0;
+				clientCount=0;  // will be raised by addClient()
 				console.log("roomclients setCurrentRoom",currentRoom," data.clients.length",data.clients.length);
 		
 				// add the other clients (if any) to the clients list
@@ -428,7 +429,7 @@ function bindSocketEvents(){
 				}
 				// add myself
 				if(clientId) {
-				    console.log("roomclients addClient",clientId);
+				    console.log("roomclients addClient myself",clientId);
 					addClient({ clientId: clientId }, true);
 				}
 				break;
@@ -440,12 +441,13 @@ function bindSocketEvents(){
 				} else if(data.state == 'offline') {
 					if(clientCount>0) {
 					    clientCount--;
-				        console.log("presence offline: other client left the room, websocket.close",clientCount);
+				        console.log("other client left signaling servers",clientCount);
 				        if(websocket) {
 				            websocket.close();
 				            websocket = null;
 				            writeToChatLog("disconnected from signaling server", "text-success");
 				        }
+					    hideWaitForConnection();
 					} else {
 				        console.log("presence offline - while no clients registered");
 					}
@@ -454,6 +456,7 @@ function bindSocketEvents(){
 
 			case "messageForward":
 				var message = data.message;
+			    console.log("messageForward: ",message);
 				if(!message) {
 				    console.log("messageForward: message is empty - abort");
 					return;
@@ -554,6 +557,11 @@ function bindSocketEvents(){
 				var message = data.message;
                 console.log("consoleMessage: "+message);
                 writeToChatLog(message, "text-success");
+                if(message.indexOf("using p2p")>=0) {
+				    $('#fileBtn').show(1000);
+                } else if(message.indexOf("using relayed")>=0) {
+				    $('#fileBtn').hide();
+                }
 				break;
 		}
     }
@@ -612,7 +620,7 @@ function addClient(client, isMe){
                         pc1.setLocalDescription(offerDesc, function () {
                             // send offerDesc as signaling server message to user 2
                             if(websocket) {
-                                console.log("addClient websocket.send('messageForward')");
+                                console.log("addClient websocket.send('messageForward','offer')");
 						    	websocket.send(JSON.stringify({
 						    		command:'messageForward', 
 					    			msgType:'offer', 
@@ -632,7 +640,7 @@ function addClient(client, isMe){
                     }
                 }, function () { console.warn("pc1.createOffer failed"); });
 
-                console.log("Created local offer called");
+                console.log("pc1.createOffer called");
                 // function (offerDesc) may not be called!!!
                 // if this happens, this is a firefox 22 bug. firefox needs to be restarted.
                 // setTimeout and check if localOffer is set
@@ -663,10 +671,138 @@ function linkify(text) {
     return text.replace(exp,"<a href='$1' target='_blank'>$1</a>"); 
 }
 
+var arrayBufferChunks = [], meta = {};
+var downloadBase64 = "";
+var downloadStartTime = 0;
+
 function receiveMessage(msg) {
-    msg = linkify(msg);
-    document.getElementById('audiotag').play();
-    writeToChatLog(msg, "text-info");
+	var data;
+	try {
+		data = JSON.parse(msg);
+	} catch(err) {
+		// plain text message
+		var text = linkify(msg);
+		console.log("receiveMessage text",text);
+		document.getElementById('audiotag').play();
+		writeToChatLog("received msg: "+text, "text-info");
+		return;
+	}
+
+	if(data.status == 'start') {
+		// step 1: store the meta data temporarily
+		meta = data;
+		downloadBase64 = "";
+		downloadStartTime = new Date().getTime()
+		console.log("receiveMessage start",meta);
+
+	} else if(data.status == 'data') {
+		if(downloadBase64=="") {
+			var b64 = data.data.split(",")
+			downloadBase64 = b64[1];
+		} else {
+			downloadBase64 += data.data;
+		}
+		var byteCount = downloadBase64.length // brutto
+		var downloadDurationMs = new Date().getTime() - downloadStartTime;
+		var downloadDurationDisplay = Math.round(downloadDurationMs/10)/100;
+		var kbytesPerSecDisplay = Math.round((byteCount*100) / downloadDurationMs) / 100;
+		console.log("receiveMessage data "+byteCount+" bytes "+
+						downloadDurationDisplay+"s "+kbytesPerSecDisplay+" KB/s");
+
+	} else if(data.status == 'complete') {
+		// step 3: create an object URL for a download link
+		var binaryData = atob(downloadBase64);
+		var byteCount = binaryData.length; // netto
+		console.log("receiveMessage complete wire-bytecount="+downloadBase64.length+" binary-bytecount="+byteCount);
+		// put binaryData into Blob so it can be stored
+		var ab = new ArrayBuffer(byteCount);
+		var ua = new Uint8Array(ab);
+		for (var i = 0; i < byteCount; i++) {
+		    ua[i] = binaryData.charCodeAt(i);
+		}
+		var blob = new Blob([ua], { "type" : meta.type});
+
+		var downloadDurationMs = new Date().getTime() - downloadStartTime;
+		var downloadDurationDisplay = Math.round(downloadDurationMs/10)/100;
+		var bytesPerSec = byteCount / (downloadDurationMs/1000);
+		var kbytesPerSecDisplay = Math.round(bytesPerSec/10)/100;
+		var dlMsg = ""+byteCount+" bytes "+downloadDurationDisplay+"s "+kbytesPerSecDisplay+" KB/s";
+		console.log("receiveMessage complete "+dlMsg);
+
+		var dlLink = '<a href="'+URL.createObjectURL(blob)+'" download="'+meta.name+'">'+meta.name+'</a>';
+		writeToChatLog("received file: "+dlLink+" "+dlMsg, "text-info");
+		document.getElementById('audiotag').play();
+		downloadBase64 = ""
+		meta = {}
+	} 
+}
+
+$('#fileBtn').change(function() {
+    var file = this.files[0];
+    sendFile(file);
+    $('#messageTextBox').focus();
+});
+
+function sendFile(file) {
+    console.log("sendFile",file,file.size);
+    if (file.size) {
+	    $('#fileBtn').hide();
+
+		webrtcDataChannel.send(JSON.stringify({ //json
+            name: file.name,
+            type: file.type,
+            status: 'start'
+        }));
+
+		var chunkSize = 64000,
+			fileSize = 0,
+			textToTransfer = '',
+			numberOfPackets = 0,
+			packet = 0;
+				    
+		function onReadAsDataURL(event,text) {
+			if(event) {
+				textToTransfer = event.target.result;
+				fileSize = textToTransfer.length;
+				numberOfPackets = parseInt(fileSize / chunkSize);
+			    console.log("sendFile onload fileSize="+fileSize+" numberOfPackets="+numberOfPackets);
+			    packet = 0;
+			}
+
+			var from = packet * chunkSize;
+			var to = from + chunkSize;
+			console.log("sendFile packet="+packet+" bytes="+to);
+			webrtcDataChannel.send(JSON.stringify({
+				status: 'data',
+				data: textToTransfer.slice(from,to)
+			}));
+
+			packet++;
+			if(packet<numberOfPackets) {
+		        setTimeout(function () {
+		            onReadAsDataURL(null, null);
+		        }, 20);
+			} else {
+				from = from + chunkSize;
+				if(fileSize>from) {
+					console.log("sendFile last packet="+packet+" from="+from+" to=fileSize="+fileSize);
+					webrtcDataChannel.send(JSON.stringify({
+						status: 'data',
+						data: textToTransfer.slice(from,fileSize)
+					}));
+				}
+				webrtcDataChannel.send(JSON.stringify({
+				    status: 'complete'
+				}));
+			    $('#fileBtn').show();
+				writeToChatLog("sent file: "+file.name+" "+fileSize+" bytes");
+			}
+		}
+
+        var reader = new window.FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = onReadAsDataURL;
+    }
 }
 
 function sendMessage(msg) {
@@ -679,6 +815,7 @@ function sendMessage(msg) {
         //channel.send({message: msg});
 
         if(serverRoutedMessaging) {
+/*
         	websocket.send(JSON.stringify({
         		command:'messageForward', 
 			    msgType:'message', 
@@ -686,6 +823,7 @@ function sendMessage(msg) {
         	}));
             msg = linkify(msg);
             writeToChatLog(msg, "text-success");
+*/
         } else {
             if(webrtcDataChannel) {
                 webrtcDataChannel.send(msg);
@@ -722,21 +860,18 @@ function getTimestamp() {
 
 function writeToChatLog(message, message_type) {
     var msg = message;
-    if(message_type!="text-success")
-        msg = "other: "+message;
+    //if(message_type!="text-success")
+    //    msg = "other: "+message;
     document.getElementById('chatlog').innerHTML 
     	+= '<p class=\"'+message_type+'\">'+'['+getTimestamp()+'] '+msg+'</p>';
     // Scroll chat text area to the bottom on new input.
     $('#chatlog').scrollTop($('#chatlog')[0].scrollHeight);
 }
 
+
+
 /*
 // fileReceiver
-$('#fileBtn').change(function() {
-    var file = this.files[0];
-    console.log(file);
-    sendFile(file);
-});
 
 function fileSent(file) {
     console.log(file + " sent");

@@ -129,10 +129,11 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 	var linkType string
 	var otherCws *websocket.Conn = nil
 	var forRingCws *websocket.Conn = nil
+	var userNum = 0
 
 	err := websocket.Message.Send(cws, `{"command":"connect"}`)
 	if err != nil {
-		fmt.Println(TAG2, "WsSessionHandler failed to send 'connect' state", err)
+		fmt.Println(TAG2, userNum,"WsSessionHandler failed to send 'connect' state", err)
 		done <- true
 		return
 	}
@@ -141,31 +142,32 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 	var abortCmdChan chan bool
 
 	for {
-		//fmt.Println(TAG2,"WsSessionHandler waiting for command from client...")
+		//fmt.Println(TAG2,userNum,"WsSessionHandler waiting for command from client...")
 		var msg map[string]string
 		err := websocket.JSON.Receive(cws, &msg)
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println(TAG2, "WsSessionHandler received EOF for myClientId=", myClientId)
+				fmt.Println(TAG2, userNum,"WsSessionHandler received EOF for myClientId=", myClientId)
 				if otherCws != nil {
 					// send presence=offline to otherCws
 					websocket.Message.Send(otherCws, `{"command":"presence", "state":"offline"}`)
 				}
 			} else {
-				fmt.Println(TAG2, "WsSessionHandler can't receive for myClientId=", myClientId, err)
+				fmt.Println(TAG2, userNum,"WsSessionHandler can't receive for myClientId=", myClientId, err)
 			}
 			break
 		}
 
+		fmt.Println(TAG2,userNum,"WsSessionHandler msg['command']="+msg["command"],otherCws)
 		switch msg["command"] {
 		case "connect":
 			// create unique clientId
 			myClientId = generateId()
 			// send "ready" with unique clientId
-			fmt.Println(TAG2, "WsSessionHandler connect: send ready myClientId:", myClientId)
+			fmt.Println(TAG2, userNum, "WsSessionHandler connect: send ready myClientId:", myClientId)
 			err := websocket.Message.Send(cws, fmt.Sprintf(`{"command":"ready","clientId": "%s"}`, myClientId))
 			if err != nil {
-				fmt.Println(TAG2, "WsSessionHandler connect: websocket.Message.Send err:", err)
+				fmt.Println(TAG2, userNum, "WsSessionHandler connect: websocket.Message.Send err:", err)
 			}
 
 		case "subscribe":
@@ -175,13 +177,14 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 			// from where roomName + linkType will be forwarded here
 			roomName = msg["room"]
 			linkType = msg["linkType"]
-			fmt.Println(TAG2, "WsSessionHandler subscribe: roomName="+roomName+" linkType="+linkType)
+			fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: roomName="+roomName+" linkType="+linkType)
 
 			r, ok2 := roomInfoMap[roomName]
 			if !ok2 {
-				// no entry = user 1: create new map entry (roomname -> clientid)
-				// TODO: retrieve and remind serverRoutedMessaging state
-				fmt.Println(TAG2, "WsSessionHandler subscribe: new room=", roomName, "clientId=", myClientId)
+				// no entry for roomName = user 1: create new map entry (roomname -> clientid)
+				// TODO: retrieve and remind serverRoutedMessaging state	- OUTDATED
+				userNum = 1
+				fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: new room="+roomName+" cliId=", myClientId)
 				var r roomInfo
 				r.clientId = myClientId
 				r.linkType = linkType
@@ -194,16 +197,16 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 					value <- roomName
 				}
 
-				fmt.Println(TAG2, "WsSessionHandler subscribe: send roomclients")
+				fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: send roomclients")
 				err1 := websocket.Message.Send(cws,
 					fmt.Sprintf(`{"command":"roomclients", "room":"%s", "clients":[]}`, roomName))
 				if err1 != nil {
-					fmt.Println(TAG2, "WsSessionHandler subscribe: websocket.Message.Send", err1)
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: websocket.Message.Send", err1)
 				} 
 				/* ringtoneFile only needed for local (at home) deployment
 				else {
 					if ringtoneFile != "" {
-						fmt.Println(TAG2, "WsSessionHandler subscribe: play ringtoneFile", ringtoneFile)
+						fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: play ringtoneFile", ringtoneFile)
 						newRoomCmd = exec.Command("play", ringtoneFile, "repeat", "8")
 						go waitForCmd(&newRoomCmd, abortCmdChan)
 					}
@@ -215,50 +218,66 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				roomInfoMap[roomName] = r
 
 			} else {
-				// user 2: send to same client: "roomclients" with array of clients in this room
-				fmt.Println(TAG2, "WsSessionHandler subscribe: existing room=", roomName, "clientId=", myClientId)
-				otherCws = r.cws
+				// found roomInfoMap[roomName]: this is the 2nd user to subscribe
+				// send to same client: "roomclients" with array of clients in room
+				userNum = 2
+				fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: existroom="+roomName+" cliId="+myClientId)
+				if otherCws==nil {
+					otherCws = r.cws
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: otherCws=",otherCws)
+					r.cws = cws
+				}
 				newRoomCmd = r.newRoomCmd
 				abortCmdChan = r.abortCmdChan
-				r.cws = cws
 				r.users = 2			
 				if(linkType!=r.linkType) {
 					// if both clients disagree on the linkType, make both use relayed
-					fmt.Println(TAG2, "WsSessionHandler subscribe: linkType mismatch 2:"+linkType+" 1:"+r.linkType)
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: linkType mismatch 2:"+linkType+" 1:"+r.linkType)
 					linkType="relayed"
 					r.linkType="relayed"
-				}			
+				} else {
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: linkType same 2:"+linkType+" 1:"+r.linkType)
+				}
 				roomInfoMap[roomName] = r
 
-				// TODO: send other clients serverRoutedMessaging state
+				// TODO: send other clients serverRoutedMessaging state		-	OUTDATED
 
 				// send to this client: roomclients array
 				clientArray := fmt.Sprintf(`[{"clientId": "%s"}]`, r.clientId)
-				err1 := websocket.Message.Send(cws,
-					fmt.Sprintf(`{"command":"roomclients", "room":"%s", "clients":%s}`, roomName, clientArray))
+				json := fmt.Sprintf(`{"command":"roomclients", "room":"%s", "clients":%s}`, roomName, clientArray)
+				fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: send this json="+json)
+				err1 := websocket.Message.Send(cws,json)
+				// TMTMTM this arrives at cws, but it is the last ws received by that client
 				if err1 != nil {
-					fmt.Println(TAG2, "WsSessionHandler subscribe: websocket.Message.Send", err1)
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: websocket.Message.Send", err1)
 					continue
 				}
 
 				// send to other client in this room: "presence" with data.state ("online") + data.client
-				fmt.Println(TAG2, "WsSessionHandler subscribe: send presence online...")
+				fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: send presence online...")
 				clientInfo := fmt.Sprintf(`{"clientId":"%s"}`, myClientId)
-				err2 := websocket.Message.Send(otherCws,
-					fmt.Sprintf(`{"command":"presence", "state": "online", "client": %s}`, clientInfo))
+				json2 := fmt.Sprintf(`{"command":"presence", "state": "online", "client": %s}`, clientInfo)
+				fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: send other json="+json2)
+				err2 := websocket.Message.Send(otherCws,json2)
+				// TMTMTM this arrives at otherCws
 				if err2 != nil {
-					fmt.Println(TAG2, "WsSessionHandler subscribe: websocket.Message.Send", err2)
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: websocket.Message.Send", err2)
 					continue
 				}
+				fmt.Println(TAG2,userNum, "WsSessionHandler subscribe: cws=",cws)
 
+				/* newRoomCmd only needed for local (at home) deployment
 				if newRoomCmd != nil {
 					// stop newRoomCmd -> stop ringing
-					fmt.Println(TAG2, "WsSessionHandler subscribe: stop ringing", myClientId)
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: stop ringing", myClientId)
 					abortCmdChan <- true
 				} else {
-					fmt.Println(TAG2, "WsSessionHandler subscribe: not stop ringing", myClientId)
+					fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: not stop ringing", myClientId)
 				}
+				*/
+
 			}
+			fmt.Println(TAG2, userNum, "WsSessionHandler subscribe: done otherCws:",otherCws)
 
 		case "messageForward":
 			// send "messageForward" and forward msg["data"]
@@ -266,16 +285,25 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				// the 1st time user 1 does a messageForward, it does not yet know otherCws
 				r, ok2 := roomInfoMap[roomName]
 				if ok2 {
+					fmt.Println(TAG2, userNum, "WsSessionHandler messageForward: set otherCws roomName="+roomName)
 					otherCws = r.cws
 					linkType = r.linkType  // both clients use the same linkType now
+				} else {
+					fmt.Println(TAG2, userNum, "WsSessionHandler messageForward: !otherCws !roomName="+roomName)
 				}
+			} else {
+				fmt.Println(TAG2,userNum, "WsSessionHandler messageForward: otherCws!",otherCws,"myClientId:", myClientId)
 			}
-			//fmt.Println(TAG2,"WsSessionHandler messageForward: myClientId", myClientId)
+
+			fmt.Println(TAG2,userNum, "WsSessionHandler messageForward: cws=",cws)
+
 			message, err := json.Marshal(msg["message"])
 			if err != nil {
-				fmt.Println(TAG2, "WsSessionHandler messageForward: json.Marshal err:", err)
+				fmt.Println(TAG2, userNum, "WsSessionHandler messageForward: json.Marshal err:", err)
 				continue
 			}
+			messageString := fmt.Sprintf("%s", message)
+			fmt.Println(TAG2,userNum, "WsSessionHandler messageForward: message:"+messageString)
 
 			// UDP-RELAY proxy
 
@@ -294,28 +322,27 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 			// a=candidate:1 1 UDP 1692467199 92.201.118.190 35043 typ srflx raddr 192.168.3.224 rport 35043\\r\\n
 			// a=candidate:1 2 UDP 1692467198 92.201.118.190 53857 typ srflx raddr 192.168.3.224 rport 53857\\r\\n
 
-			messageString := fmt.Sprintf("%s", message)
 
 			// the requested linkType is sent from rtccallee.js: case "newRoom":...
 			// via rtcchat.js: linkType=getUrlParameter('typ') and subscribeRoom() socket.send()
 			if linkType == "p2p" {
-				fmt.Println(TAG2, "##### P2P mode ###### ")
-				sendConsoleMessage(cws, nil, "using p2p rtc link...")
+				fmt.Println(TAG2, userNum, "WsSessionHandler messageForward: ##### P2P mode ###### ")
+				sendConsoleMessage(cws, otherCws, "using p2p rtc link...")
 
 			} else {
 				// UDP-RELAY mode: start one UDP proxy per "typ srflx" candidate
 
-				sendConsoleMessage(cws, nil, "using relayed rtc link...")
+				sendConsoleMessage(cws, otherCws, "using relayed rtc link...")
 
 				hostAddrIP4 := HostAddrIP4("") // from stun.go
 				var hostAddr = fmt.Sprintf("%d.%d.%d.%d",
 					hostAddrIP4[0], hostAddrIP4[1], hostAddrIP4[2], hostAddrIP4[3])
-				fmt.Println(TAG2, "##### PATCH SDP's ###### hostAddr=", hostAddr)
+				fmt.Println(TAG2, userNum, "WsSessionHandler messageForward: ##### PATCH SDP's ###### hostAddr=", hostAddr)
 				var addr string
 				idx := strings.Index(messageString, "typ srflx")
 				if idx < 0 {
-					fmt.Println(TAG2, "NOT FOUND 'typ srflx'")
-					sendConsoleMessage(cws, otherCws, "no srflx entries - using P2P link")
+					//fmt.Println(TAG2, "WsSessionHandler messageForward: NOT FOUND 'typ srflx'")
+					sendConsoleMessage(cws, otherCws, "no srflx entries - using p2p link")
 				} else {
 					substr := messageString[0:idx]
 					//fmt.Println(TAG2,"substr="+substr)
@@ -323,7 +350,7 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 					elements := len(f)
 					//fmt.Println(TAG2,"elements=",elements)
 					if elements <= 2 {
-						fmt.Println(TAG2, "NOT FOUND enough elements=", elements)
+						fmt.Println(TAG2, "WsSessionHandler messageForward: NOT FOUND enough elements=", elements)
 						sendConsoleMessage(cws, otherCws, "linktype relayed failed: SDP element count")
 					} else {
 						// addr = the host of the 1st "typ srflx" entry
@@ -407,32 +434,32 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 			}
 
 			msgType := msg["msgType"]
-			var json = fmt.Sprintf(`{"command":"messageForward", "msgType":"%s", "message": %s}`,
-				msgType, messageString)
-			//fmt.Println(TAG2,"WsSessionHandler messageForward json:",json)
+			json := fmt.Sprintf(`{"command":"messageForward", "msgType":"%s", "message": %s}`,msgType,messageString)
+			fmt.Println(TAG2,userNum,"WsSessionHandler messageForward json:",json)
 			err2 := websocket.Message.Send(otherCws, json)
 			if err2 != nil {
-				fmt.Println(TAG2, "WsSessionHandler messageForward: websocket.Message.Send err:", err2)
+				fmt.Println(TAG2, userNum,"WsSessionHandler messageForward: websocket.Message.Send err:", err2)
 			} else {
-				fmt.Println(TAG2, "WsSessionHandler messageForward: json=", json)
+				fmt.Println(TAG2, userNum,"WsSessionHandler messageForward: sent done")
 			}
+			fmt.Println(TAG2, userNum,"WsSessionHandler messageForward: done")
 
 		case "stopRing":
-			fmt.Println(TAG2, "WsSessionHandler stopRing msg=", msg)
+			fmt.Println(TAG2, userNum,"WsSessionHandler stopRing msg=", msg)
 			calleekey := msg["calleekey"]
-			fmt.Println(TAG2, "WsSessionHandler stopRing calleekey=", calleekey)
+			fmt.Println(TAG2, userNum,"WsSessionHandler stopRing calleekey=", calleekey)
 			if calleekey != "" {
 				calleeCws, ok := CalleeMap[calleekey]
 				if ok {
-					fmt.Println(TAG2, "WsSessionHandler stopRing websocket.Message.Send()")
+					fmt.Println(TAG2, userNum,"WsSessionHandler stopRing websocket.Message.Send()")
 					websocket.Message.Send(calleeCws, `{"command":"stopRing"}`)
 				}
 			}
 
 		case "forRing":
-			fmt.Println(TAG2, "WsSessionHandler forRing msg=", msg)
+			fmt.Println(TAG2, userNum,"WsSessionHandler forRing msg=", msg)
 			calleekey := msg["calleekey"]
-			fmt.Println(TAG2, "WsSessionHandler forRing calleekey=", calleekey)
+			fmt.Println(TAG2, userNum,"WsSessionHandler forRing calleekey=", calleekey)
 			if calleekey != "" {
 			    var ok = false
 				forRingCws, ok = CalleeMap[calleekey]
@@ -441,9 +468,9 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				}
             }
 			if forRingCws==nil {
-    			fmt.Println(TAG2, "WsSessionHandler forRing no forRingCws")
+    			fmt.Println(TAG2, userNum,"WsSessionHandler forRing no forRingCws")
 			} else {
-    			fmt.Println(TAG2, "WsSessionHandler forRing forRingCws set")
+    			fmt.Println(TAG2, userNum,"WsSessionHandler forRing forRingCws set")
 			}
 		}
 	}
@@ -487,8 +514,10 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 
 func sendConsoleMessage(cws *websocket.Conn, otherCws *websocket.Conn, msg string) {
 	json := fmt.Sprintf(`{"command":"consoleMessage", "message": "%s"}`, msg)
-	fmt.Println(TAG2, "send ", json)
-	websocket.Message.Send(cws, json)
+	fmt.Println(TAG2, "sendConsoleMessage="+msg)
+	if cws != nil {
+		websocket.Message.Send(cws, json)
+	}
 	if otherCws != nil {
 		websocket.Message.Send(otherCws, json)
 	}

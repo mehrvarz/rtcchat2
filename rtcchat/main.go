@@ -29,6 +29,8 @@ func main() {
 	fmt.Println("sigport",*sigport)
 	fmt.Println("callerport",*callerport)
 	fmt.Println("stunport",*stunport)
+	
+	rtcchat2.GkvInit()
 
 	// StunUDP (default port 19253 = stunport)
 	go rtcchat2.StunUDP(*stunhost,*stunport)
@@ -39,11 +41,13 @@ func main() {
 
 	// CalleeService (default port 8078 = sigPort+1) allows a callee to wait for and receive chat calls
 	// makes use of "html/callee/*"
-	go rtcchat2.CalleeService(*secureCallee, *sigport)
+	go rtcchat2.CalleeService(*secureCallee, *sigport, *callerport, "auto")
 
 	// CallerService (default port 8000 = callerport) allows other clients to "call" admin clients
 	// makes use of "html/caller-enter-name/*" and "html/callee-unavailable/*"
 	go rtcchat2.CallerService(*secureRedirect, *callerport, *sigport)
+	
+	go rtcchat2.BGCleaner()
 
 	// let services run til aborted
 	select {}

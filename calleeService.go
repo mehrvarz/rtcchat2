@@ -14,12 +14,16 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var TAG3 = "CalleeService"
 var webrootCallee = "html/callee"
 
-func CalleeService(secure bool, sigport int) {
+var maxMakeKeys = 100
+var MakeKeyMap = make(map[string]string, maxMakeKeys)
+
+func CalleeService(secure bool, sigport int, callerPort int, autoAnswer string) {
 	fmt.Println(TAG3, "start...")
 	calleeServeMux := http.NewServeMux()
 
@@ -39,9 +43,10 @@ func CalleeService(secure bool, sigport int) {
 		htmlTempl := template.Must(template.ParseFiles(templFilePath))
 		type PatchInfo struct {
 			SigPort        int
-			SecureRedirect bool
+			SecureCallee   bool
+			AutoAnswer     string
 		}
-		patchInfo := PatchInfo{sigport, secure}
+		patchInfo := PatchInfo{sigport, secure, autoAnswer}
 		htmlTempl.Execute(w, patchInfo)
 	})
 
@@ -59,26 +64,59 @@ func CalleeService(secure bool, sigport int) {
 
 		//fmt.Println(TAG, "serve r.URL.Path", r.URL.Path)
 		if r.URL.Path == "" || r.URL.Path == "/" || r.URL.Path == "/index.html" {
-			redir := "/" + webrootCallee + "/index.html"
-			// TODO: here we want to offer a tool to generate private + public URL's for the callee
-			fmt.Println(TAG, "redir", redir, " *** MUST OFFER TOOL TO GENERATE CALLEE/CALLER URL's ***")
-			http.Redirect(w, r, redir, http.StatusMovedPermanently)
+			// generate new random callee + caller keys (repeat while already available in rtcchat.gkv)
+			callerKey, calleeKey := CreateNewKeys()
+			keyKey := generateId()
+			type PatchInfo struct {
+				CalleeKey string
+				CallerKey string
+				KeyKey string
+				SigPort int
+				CallerPort int
+				SecureCallee bool
+			}
+			patchInfo := PatchInfo{callerKey,calleeKey,keyKey,sigport,callerPort,secure}
+			pathToIndex := "html/callee-new-keys" + "/index.html"
+			fmt.Println(TAG, "patchInfo=", patchInfo, "serve=", pathToIndex)
+			homeTempl := template.Must(template.ParseFiles(pathToIndex))
+			homeTempl.Execute(w, patchInfo)
+			MakeKeyMap[keyKey] = callerKey+","+calleeKey
+			// TODO: what happens if MakeKeyMap runs full?
+			// user will activte these keys in: case "activateKeys"
+
+			// TODO: we need a service that runs in the background and removes all outdated keys
 
 		} else if strings.HasPrefix(r.URL.Path, "/callee:") {
 			calleeKey := r.RequestURI[8:]
 			callerKey := getPersistedCallerKey(calleeKey)
+			if(callerKey!="") {
+				// hand over callerKey by patching callee/index.html
+				// so that rtccallee.js can send back the callerKey via websocket "announce"
+				// for CalleeMap[callerKey] = cws (see below)
+				type PatchInfo struct {
+					Key string
+				}
+				patchInfo := PatchInfo{callerKey} // callerKey = public-callee-key
+				pathToIndex := webrootCallee + "/index.html"
+				fmt.Println(TAG, "patchInfo=", patchInfo, "serve=", pathToIndex)
+				homeTempl := template.Must(template.ParseFiles(pathToIndex))
+				homeTempl.Execute(w, patchInfo)
 
-			// hand over callerKey by patching callee/index.html
-			// so that rtccallee.js can send back the callerKey via websocket "announce"
-			// for CalleeMap[callerKey] = cws (see below)
-			type PatchInfo struct {
-				Key string
+
+			} else {
+				// unknown callee key: show error page
+				fmt.Println(TAG, "unknown calleeKey="+calleeKey+" show error page")
+				// add artificial delay: fight user scanning
+				select {
+				case <-time.After(3 * time.Second):
+					type PatchInfo struct {
+						Key string
+					}
+					patchInfo := PatchInfo{calleeKey}
+					htmlTempl := template.Must(template.ParseFiles("html/callee-unavailable/index.html"))
+					htmlTempl.Execute(w, patchInfo)
+				}
 			}
-			patchInfo := PatchInfo{callerKey} // callerKey = public-callee-key
-			pathToIndex := webrootCallee + "/index.html"
-			fmt.Println(TAG, "patchInfo=", patchInfo, "serve=", pathToIndex)
-			homeTempl := template.Must(template.ParseFiles(pathToIndex))
-			homeTempl.Execute(w, patchInfo)
 
 		} else {
 			redir := "/html" + r.RequestURI
@@ -154,6 +192,25 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 			fmt.Println(TAG3, "WsSessionHandlerCallee user with key is now registered:", callerKey)
 			msg := "you have been registered for caller id=" + callerKey
 			websocket.Message.Send(cws, fmt.Sprintf(`{"command":"info","msg": "%s"}`, msg))
+
+		case "activateKeys":
+			keyKey := msg["key"]
+			fmt.Println(TAG3, "WsSessionHandlerCallee user wants to activate key:", keyKey)
+			bothKeys,ok := MakeKeyMap[keyKey]
+			if(!ok) {
+				fmt.Println(TAG3, "WsSessionHandlerCallee failed to activate:", keyKey)
+				// send to callee-new-keys.js
+				websocket.Message.Send(cws, `{"command":"activateConfirm","success": false}`)
+			} else {
+				//fmt.Println(TAG3, "WsSessionHandlerCallee ready to activate:", bothKeys)
+				// store both keys in rtcchat.gkv
+				strArray := strings.Split(bothKeys,",")
+				fmt.Println(TAG3, "WsSessionHandlerCallee ready to activate:", strArray[0], strArray[1])
+				StoreNewKeys(strArray[0], strArray[1])
+				// send to callee-new-keys.js
+				websocket.Message.Send(cws, `{"command":"activateConfirm","success": true}`)
+				delete(MakeKeyMap,keyKey)
+			}
 		}
 	}
 
