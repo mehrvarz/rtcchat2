@@ -10,9 +10,9 @@ More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtccha
 Install
 -------
 
-go get github.com/steveyen/gkvlite
-
 go get github.com/mehrvarz/rtcchat2
+
+go get github.com/steveyen/gkvlite
 
 go run rtcchat/gkvCreate.go
 
