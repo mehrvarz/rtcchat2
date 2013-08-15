@@ -7,11 +7,13 @@ rtc chat establishes end-to-end encrypted, P2P and relayed communication links.
 
 More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
-Installation
+Install
 -------
 
 go get github.com/steveyen/gkvlite
+
 go get github.com/mehrvarz/rtcchat2
+
 go run rtcchat/gkvCreate.go
 
 License
