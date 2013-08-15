@@ -5,7 +5,6 @@ A WebRTC chat service written in Go
 
 rtc chat establishes end-to-end encrypted, P2P and relayed communication links.
 
-More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
 Install and run service
 -----------------------
@@ -13,7 +12,7 @@ Install and run service
 You should have Go 1.1 installed.
 
 You also need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat
-under "Create keys for WebSocket signaling over https"
+under "Create keys for WebSocket signaling over https".
 
 	go get github.com/mehrvarz/rtcchat2
 	go get github.com/steveyen/gkvlite
@@ -21,6 +20,7 @@ under "Create keys for WebSocket signaling over https"
 	go run rtcchat/gkvCreate.go
 	./run
 
+All info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
 License
 -------
