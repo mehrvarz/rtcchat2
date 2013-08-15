@@ -16,6 +16,8 @@ go get github.com/mehrvarz/rtcchat2
 
 go run rtcchat/gkvCreate.go
 
+./run
+
 License
 -------
 
