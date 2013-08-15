@@ -7,8 +7,10 @@ rtc chat establishes end-to-end encrypted, P2P and relayed communication links.
 
 More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
-Install
--------
+Install and run service
+-----------------------
+
+You should have Go 1.1 installed.
 
 go get github.com/mehrvarz/rtcchat2
 
@@ -18,7 +20,7 @@ cd $GOPATH/src/mehrvarz/rtcchat2
 
 go run rtcchat/gkvCreate.go
 
-(*you also need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat2 
+(*You also need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat
 under "Create keys for WebSocket signaling over https")
 
 ./run
