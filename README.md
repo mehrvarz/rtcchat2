@@ -13,11 +13,14 @@ You should have Go 1.1 installed.
 
 	go get github.com/mehrvarz/rtcchat2
 	go get github.com/steveyen/gkvlite
+
+Initialize the callee service key/value flat file DB.
+
 	cd $GOPATH/src/mehrvarz/rtcchat2
 	go run rtcchat/gkvCreate.go
 
-You need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat
-under "Create keys for WebSocket signaling over https". Then run all services:
+You also need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat
+under "Create keys for WebSocket signaling over https". To run all services:
 
 	./run
 
