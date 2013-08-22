@@ -18,7 +18,6 @@ var roomName = null;
 var linkType = null; // default null=p2p; option="relayed"
 var key = null;
 var calleeKey = null;
-var serverRoutedMessaging = false;
 
 $('#waitForConnection').modal('hide');
 
@@ -43,8 +42,29 @@ function init() {
 		socketServerAddress = "wss://"+host+":"+wsPort+"/ws";
 	else
 		socketServerAddress = "ws://"+host+":"+wsPort+"/ws";
+
+	try {
+		navigator.sayswho= (function(){
+			var ua= navigator.userAgent, 
+			N= navigator.appName, tem, 
+			M= ua.match(/(opera|chrome|safari|firefox|msie|trident)\/?\s*([\d\.]+)/i) || [];
+			M= M[2]? [M[1], M[2]]:[N, navigator.appVersion, '-?'];
+			if(M && (tem= ua.match(/version\/([\.\d]+)/i))!= null) M[2]= tem[1];
+			return M.join(' ');
+		})();
+		var sayswho = navigator.sayswho.split(' ');
+		var browserName = sayswho[0];
+		var browserVersion = parseFloat(sayswho[1]);
+		console.log("start: navigator.sayswho=",browserName,browserVersion);
+		if(browserName=="Firefox" && browserVersion>=22) {
+			$('#versionInfo').hide();
+		}
+	} catch(err) {
+		console.log("navigator.sayswho err",err);
+	}
+
     console.log("start: connecting to signaling server",socketServerAddress);
-    writeToChatLog("connecting to signaling server "+socketServerAddress, "text-success");
+    writeToChatLog("connecting to signaling server "+socketServerAddress+"...", "text-warning");
     websocket = new WebSocket(socketServerAddress);
 	websocket.onopen = function () {
 	    roomName = getUrlParameter('room');
@@ -151,7 +171,8 @@ function webrtcDisconnect() {
     console.log("webrtcDisconnect...");
     // this can happen while still waiting for a webrtc connection, so we must always hide busybee
     hideWaitForConnection();
-    writeToChatLog("p2p session disconnected; hit reload to restart session; hit back to ...", "text-success");
+    writeToChatLog("p2p session disconnected; hit reload to restart session; hit back to ...", "text-warning");
+    // TODO: alert() instead?
     webrtcDataChannel=null;
 }
 
@@ -171,7 +192,7 @@ function pc1CreateDataChannel() {
 
         webrtcDataChannel.onopen = function () {
             console.log("pc1 webrtcDataChannel.onopen");
-            writeToChatLog("rtc link established", "text-success");   
+            writeToChatLog("rtc link established", "text-warning");
             // show other ip-addr?
 
             // greetings: we can start sending p2p data now
@@ -186,14 +207,10 @@ function pc1CreateDataChannel() {
 
 			if(websocket) {
 				// now is a good time to force disconnect from signaling server
-				//window.setTimeout(function(){
-        		//	if(websocket) {
-    				    console.log("messageForward: force websocket.close()");
-    				    websocket.close();
-    				    websocket = null;
-    				    writeToChatLog("disconnected from signaling server", "text-success"); 
-    			//	}
-			    //},330);
+			    console.log("messageForward: force websocket.close()");
+			    websocket.close();
+			    websocket = null;
+			    //writeToChatLog("disconnected from signaling server", "text-warning");
 			}
         };
 
@@ -263,154 +280,147 @@ function bindSocketEvents(){
 				    subscribeRoom(roomName);
 				}
 
-                if(!serverRoutedMessaging) {
-				    console.log("ready: RTCPeerConnection for pc1",icecfg, con);
-				    pc1 = new RTCPeerConnection(icecfg, con);  // user 1 = server
-				    console.log("ready: set pc1.onconnection");
-				    pc1.onconnection = handleRtcConnection;
+			    console.log("ready: RTCPeerConnection for pc1",icecfg, con);
+			    pc1 = new RTCPeerConnection(icecfg, con);  // user 1 = server
+			    console.log("ready: set pc1.onconnection");
+			    pc1.onconnection = handleRtcConnection;
 
-				    console.log("ready: RTCPeerConnection for pc2",icecfg, con);
-				    pc2 = new RTCPeerConnection(icecfg, con);  // user 2 = client
-				    console.log("ready: set pc2.onconnection");
-				    pc2.onconnection = handleRtcConnection;
+			    console.log("ready: RTCPeerConnection for pc2",icecfg, con);
+			    pc2 = new RTCPeerConnection(icecfg, con);  // user 2 = client
+			    console.log("ready: set pc2.onconnection");
+			    pc2.onconnection = handleRtcConnection;
 
-				    //if(getUserMedia){
-				    //    getUserMedia({'audio':true, fake:true}, function (stream) {
-				    //        console.log("Got local audio", stream);
-				    //        pc1.addStream(stream);
-				    //    }, function (err) { console.warn("getUserMedia error",err); });
-				    //} else {
-				    //    //alert('Your browser does not support the getUserMedia() API.');
-				    //    console.log("Your browser does not support the getUserMedia() API");
-				    //    writeToChatLog("Your browser does not support the getUserMedia() API");
-				    //} 
+			    //if(getUserMedia){
+			    //    getUserMedia({'audio':true, fake:true}, function (stream) {
+			    //        console.log("Got local audio", stream);
+			    //        pc1.addStream(stream);
+			    //    }, function (err) { console.warn("getUserMedia error",err); });
+			    //} else {
+			    //    //alert('Your browser does not support the getUserMedia() API.');
+			    //    console.log("Your browser does not support the getUserMedia() API");
+			    //    writeToChatLog("Your browser does not support the getUserMedia() API");
+			    //} 
 
-				    if (navigator.mozGetUserMedia) {
-				        console.log("ready: pc1CreateDataChannel()");
-				        pc1CreateDataChannel();
-				    } else {
-				        console.log("ready: not getting data channel for ",navigator.mozGetUserMedia);
-				    }
+			    if (navigator.mozGetUserMedia) {
+			        console.log("ready: pc1CreateDataChannel()");
+			        pc1CreateDataChannel();
+			    } else {
+			        console.log("ready: not getting data channel for ",navigator.mozGetUserMedia);
+			    }
 
-				    pc2.ondatachannel = function (e) {
-				        webrtcDataChannel = e.channel || e; // Chrome sends event, FF sends raw channel
-				        console.log("pc2.ondatachannel set webrtcDataChannel",
-				        	webrtcDataChannel,webrtcDataChannel.label);
-				        if(!webrtcDataChannel) {
-				            writeToChatLog("failed to create webrtc dataChannel", "text-success");
-				            return;
-				        }
+			    pc2.ondatachannel = function (e) {
+			        webrtcDataChannel = e.channel || e; // Chrome sends event, FF sends raw channel
+			        console.log("pc2.ondatachannel set webrtcDataChannel",
+			        	webrtcDataChannel,webrtcDataChannel.label);
+			        if(!webrtcDataChannel) {
+			            writeToChatLog("failed to create webrtc dataChannel", "text-success");
+			            return;
+			        }
 
-				        //var fileReceiver2 = new FileReceiver();
+			        //var fileReceiver2 = new FileReceiver();
 
-				        webrtcDataChannel.onopen = function () {
-				            console.log("pc2 webrtcDataChannel.onopen");
-				            writeToChatLog("rtc link established", "text-success");
-					        // shall we show other client's ip-addr?
+			        webrtcDataChannel.onopen = function () {
+			            console.log("pc2 webrtcDataChannel.onopen");
+			            writeToChatLog("rtc link established", "text-warning");
+				        // shall we show other client's ip-addr?
 
-					        // greetings: we can now start to send p2p data
-					        //if(webrtcDataChannel) {
-				            //    console.log("pc2 webrtcDataChannel.onopen; send hello from pc2...");
-				            //    var msg = "Hello from pc2";
-				            //    writeToChatLog(msg, "text-success");
-				            //    webrtcDataChannel.send(msg);
-					        //} else {
-					        //    writeToChatLog("failed to send data over webrtcDataChannel", "text-success");
-					        //}
+				        // greetings: we can now start to send p2p data
+				        //if(webrtcDataChannel) {
+			            //    console.log("pc2 webrtcDataChannel.onopen; send hello from pc2...");
+			            //    var msg = "Hello from pc2";
+			            //    writeToChatLog(msg, "text-success");
+			            //    webrtcDataChannel.send(msg);
+				        //} else {
+				        //    writeToChatLog("failed to send data over webrtcDataChannel", "text-success");
+				        //}
 
-			                if(websocket) {
-				                // now is a good time to force disconnect from signaling server
-				                // do it with a small delay
-				                //window.setTimeout(function(){
-                        		//	if(websocket) {
-                    				    console.log("webrtcDataChannel.onopen: force websocket.close()");
-                    				    websocket.close();
-                    				    websocket = null;
-                    				    writeToChatLog("disconnected from signaling server", "text-success"); 
-                    			//	}
-			                    //},330);
-			                }
-				        };
+		                if(websocket) {
+			                // now is a good time to force disconnect from signaling server
+							console.log("webrtcDataChannel.onopen: force websocket.close()");
+							websocket.close();
+							websocket = null;
+							//writeToChatLog("disconnected from signaling server", "text-warning"); 
+		                }
+			        };
 
-				        webrtcDataChannel.ondisconnect = function() {
-				            console.log("pc2 webrtcDataChannel.ondisconnect !!!!");
-				            webrtcDisconnect();
-				        };
+			        webrtcDataChannel.ondisconnect = function() {
+			            console.log("pc2 webrtcDataChannel.ondisconnect !!!!");
+			            webrtcDisconnect();
+			        };
 
-				        webrtcDataChannel.onclosedconnection = function() {
-				            console.log("pc2 webrtcDataChannel.onclosedconnection !!!!");
-				            webrtcDisconnect();
-				        };
+			        webrtcDataChannel.onclosedconnection = function() {
+			            console.log("pc2 webrtcDataChannel.onclosedconnection !!!!");
+			            webrtcDisconnect();
+			        };
 
-				        webrtcDataChannel.onclose = function() {
-				            console.log("pc2 webrtcDataChannel.onclose");
-				            webrtcDisconnect();
-				        };
+			        webrtcDataChannel.onclose = function() {
+			            console.log("pc2 webrtcDataChannel.onclose");
+			            webrtcDisconnect();
+			        };
 
-				        webrtcDataChannel.onerror = function() {
-				            console.log("pc2 webrtcDataChannel.onerror");
-				            writeToChatLog("webrtc error", "text-success");
-				        };
+			        webrtcDataChannel.onerror = function() {
+			            console.log("pc2 webrtcDataChannel.onerror");
+			            writeToChatLog("webrtc error", "text-success");
+			        };
 
-				        webrtcDataChannel.onmessage = function (e) {
-				            // msgs received by user 2
-				            //console.log("pc2 webrtcDataChannel.onmessage");
-						    //if (e.data.size) {
-						    //    fileReceiver2.receive(e.data, {});
-						    //}
-						    //else {
-						    //    var data = JSON.parse(e.data);
-						    //    if (data.type === 'file') {
-						    //        fileReceiver2.receive(e.data, {});
-						    //    }
-						    //    else {
-						    //        //writeToChatLog(data.message, "text-info");
-						    //        // Scroll chat text area to the bottom on new input.
-						    //        //$('#chatlog').scrollTop($('#chatlog')[0].scrollHeight);
-						    //    }
-						    //}
+			        webrtcDataChannel.onmessage = function (e) {
+			            // msgs received by user 2
+			            //console.log("pc2 webrtcDataChannel.onmessage");
+					    //if (e.data.size) {
+					    //    fileReceiver2.receive(e.data, {});
+					    //}
+					    //else {
+					    //    var data = JSON.parse(e.data);
+					    //    if (data.type === 'file') {
+					    //        fileReceiver2.receive(e.data, {});
+					    //    }
+					    //    else {
+					    //        //writeToChatLog(data.message, "text-info");
+					    //        // Scroll chat text area to the bottom on new input.
+					    //        //$('#chatlog').scrollTop($('#chatlog')[0].scrollHeight);
+					    //    }
+					    //}
 
-                            receiveMessage(e.data);
-				        };
-				    };
+                        receiveMessage(e.data);
+			        };
+			    };
 
-				    pc2.onaddstream = function (e) {
-				        console.log("pc2 got remote stream", e);
-				        var el = new Audio();
-				        el.autoplay = true;
-				        attachMediaStream(el, e.stream);
-				    };
+			    pc2.onaddstream = function (e) {
+			        console.log("pc2 got remote stream", e);
+			        var el = new Audio();
+			        el.autoplay = true;
+			        attachMediaStream(el, e.stream);
+			    };
 
-				    // pc1.onicecandidate = function (e) {
-				    //     console.log("pc1.onicecandidate");
-				    //     // This is for Chrome - MOZ has e.candidate alway set to null
-				    //     if (!navigator.mozGetUserMedia) {
-				    //  	   // TODO chrome?
-				    //  	   if (e.candidate) {
-				    //             if (e.candidate.candidate) {
-				    //                 console.log("ICE candidate (pc1)", JSON.stringify(e.candidate.candidate));
-				    //                 pc2.addIceCandidate(e.candidate.candidate);
-				    //             } else {
-				    //         	       console.log("ICE candidate (pc1) - no candidate");
-				    //             }
-				    //      
-				    //         } else {
-				    //             console.log("ICE candidate (pc1) no e.candidate", e);
-				    //         }
-				    //     }
-				    // };
+			    // pc1.onicecandidate = function (e) {
+			    //     console.log("pc1.onicecandidate");
+			    //     // This is for Chrome - MOZ has e.candidate alway set to null
+			    //     if (!navigator.mozGetUserMedia) {
+			    //  	   // TODO chrome?
+			    //  	   if (e.candidate) {
+			    //             if (e.candidate.candidate) {
+			    //                 console.log("ICE candidate (pc1)", JSON.stringify(e.candidate.candidate));
+			    //                 pc2.addIceCandidate(e.candidate.candidate);
+			    //             } else {
+			    //         	       console.log("ICE candidate (pc1) - no candidate");
+			    //             }
+			    //      
+			    //         } else {
+			    //             console.log("ICE candidate (pc1) no e.candidate", e);
+			    //         }
+			    //     }
+			    // };
 
-				    if (!navigator.mozGetUserMedia) {
-				        pc1.onicecandidate = function (e) {
-				            if(e & e.candidate)
-				                pc2.addIceCandidate(e.candidate);
-				        }
-				        pc2.onicecandidate = function (e) {
-				            if(e & e.candidate)
-				                pc1.addIceCandidate(e.candidate);
-				        }
-				    }
-                }
+			    if (!navigator.mozGetUserMedia) {
+			        pc1.onicecandidate = function (e) {
+			            if(e & e.candidate)
+			                pc2.addIceCandidate(e.candidate);
+			        }
+			        pc2.onicecandidate = function (e) {
+			            if(e & e.candidate)
+			                pc1.addIceCandidate(e.candidate);
+			        }
+			    }
 				break;
 
 			case "roomclients":
@@ -422,8 +432,6 @@ function bindSocketEvents(){
 				// add the other clients (if any) to the clients list
 				for(var i = 0, len = data.clients.length; i < len; i++){
 					if(data.clients[i]) {
-					    // TODO: find out if other side has requested serverRoutedMessaging
-					    // serverRoutedMessaging will be activated, if any one client is requesting it
 						addClient(data.clients[i], false);
 					}
 				}
@@ -445,7 +453,7 @@ function bindSocketEvents(){
 				        if(websocket) {
 				            websocket.close();
 				            websocket = null;
-				            writeToChatLog("disconnected from signaling server", "text-success");
+				            //writeToChatLog("disconnected from signaling server", "text-warning");
 				        }
 					    hideWaitForConnection();
 					} else {
@@ -556,7 +564,7 @@ function bindSocketEvents(){
 			case "consoleMessage":
 				var message = data.message;
                 console.log("consoleMessage: "+message);
-                writeToChatLog(message, "text-success");
+                writeToChatLog(message, "text-warning");
                 if(message.indexOf("using p2p")>=0) {
 				    $('#fileBtn').show(1000);
                 } else if(message.indexOf("using relayed")>=0) {
@@ -590,19 +598,6 @@ function addClient(client, isMe){
 	    // the other user has arrived in the room
 	    if(clientCount==2) {
 	        IAmUser=1;
-            if(serverRoutedMessaging) {
-                console.log("addClient !isMe IAmUser=1 serverRoutedMessaging",client.clientId, clientCount);
-                hideWaitForConnection();
-
-                // signal server-routed connect to other user
-		    	websocket.send(JSON.stringify({
-		    		command:'messageForward', 
-	    			msgType:'serverconnect', 
-		    		message: JSON.stringify("")
-		    	}));
-                return;
-            }
-
             if (!navigator.mozGetUserMedia) {
                 pc1CreateDataChannel();
                 console.log("addClient chrome webrtcDataChannel=", webrtcDataChannel);
@@ -684,7 +679,7 @@ function receiveMessage(msg) {
 		var text = linkify(msg);
 		console.log("receiveMessage text",text);
 		document.getElementById('audiotag').play();
-		writeToChatLog("received msg: "+text, "text-info");
+		writeToChatLog("other: "+text, "text-info");
 		return;
 	}
 
@@ -809,29 +804,12 @@ function sendMessage(msg) {
     console.log("sendMessage", msg);
     if (msg) {
         $('#messageTextBox').val("");
-
-	    // fileReceiver
-    	//var channel = new RTCMultiSession();
-        //channel.send({message: msg});
-
-        if(serverRoutedMessaging) {
-/*
-        	websocket.send(JSON.stringify({
-        		command:'messageForward', 
-			    msgType:'message', 
-        		message: JSON.stringify(msg)
-        	}));
+        if(webrtcDataChannel) {
+            webrtcDataChannel.send(msg);
             msg = linkify(msg);
             writeToChatLog(msg, "text-success");
-*/
         } else {
-            if(webrtcDataChannel) {
-                webrtcDataChannel.send(msg);
-                msg = linkify(msg);
-                writeToChatLog(msg, "text-success");
-            } else {
-                writeToChatLog("sendMessage failed no webrtcDataChannel", "text-success");
-            }
+            writeToChatLog("sendMessage failed no webrtcDataChannel", "text-success");
         }
     }
 
@@ -860,35 +838,9 @@ function getTimestamp() {
 
 function writeToChatLog(message, message_type) {
     var msg = message;
-    //if(message_type!="text-success")
-    //    msg = "other: "+message;
     document.getElementById('chatlog').innerHTML 
     	+= '<p class=\"'+message_type+'\">'+'['+getTimestamp()+'] '+msg+'</p>';
     // Scroll chat text area to the bottom on new input.
     $('#chatlog').scrollTop($('#chatlog')[0].scrollHeight);
 }
-
-
-
-/*
-// fileReceiver
-
-function fileSent(file) {
-    console.log(file + " sent");
-}
-
-function fileProgress(file) {
-    console.log(file + " progress");
-}
-
-function sendFile(data) {
-    if (data.size) {
-	    FileSender.send({
-	        file: data,
-	        onFileSent: fileSent,
-	        onFileProgress: fileProgress,
-	    });
-    }
-}
-*/
 

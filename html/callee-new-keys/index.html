@@ -2,41 +2,40 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Create keys</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>rtc chat new callee</title>
 <script src="jquery-2.0.0.js"></script>
 <script src="bootstrap.min.js"></script>
 <link href="bootstrap.min.css" rel="stylesheet">
 <link href="bootstrap-responsive.min.css" rel="stylesheet">
-<style type="text/css">body { background: #222; }</style>
 </head>
 
-<body style="height:100%">
+<body style="background:#222;">
 <div class="modal" id="getRoomName" data-backdrop="static" tabindex="-1" 
      role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 
   <div class="modal-header">
-    <h3 id="myModalLabel">rtc chat URL generation</h3>
+    <h3 id="myModalLabel">rtc chat new callee</h3>
   </div>
   <div class="modal-body">
-	<p style="margin-top:10px;margin-bottom:10px;">
-	    Two URL's will be generated for you.<br/>
+	<p style="margin-bottom:20px;">
+		You are about to generate your personal callee URL.
 	</p>
-	<p style="margin-bottom:30px;">
-	    The caller URL allows others to call you.<br/>
-	    The callee URL allows you to receive these calls.
+	<p style="margin-bottom:20px;">
+		Whenever you run your callee URL, others will be able to call you.
+		Please bookmark your callee URL and use the bookmark as entry point from now on.
+		Don't share your callee URL with others.
 	</p>
-    <button onClick="javascript:copyCaller()" style="margin-right:10px;">
-	    <p style="text-align:left;margin:4px;">Step 1: Click to copy your caller URL</p>
-    </button>
-    <button onClick="javascript:activateKeys()" id="callBtn">
-	    <p style="text-align:left;margin:4px;">Step 2: Activate your callee URL</p>
-    </button><br/>
-	<p style="margin-top:30px;">
-		This service works best in Firefox 22+
+	<p style="margin-bottom:20px;">
+		This service works best in Firefox 22 or better.
 	</p>
   </div>
-</div>
 
+  <div class="modal-footer">
+    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true"
+            onClick="javascript:activateKeys()">Generate</button>
+  </div>
+</div>
 </body>
 
 <script>

@@ -327,13 +327,15 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 			// via rtcchat.js: linkType=getUrlParameter('typ') and subscribeRoom() socket.send()
 			if linkType == "p2p" {
 				fmt.Println(TAG2, userNum, "WsSessionHandler messageForward: ##### P2P mode ###### ")
-				sendConsoleMessage(cws, otherCws, "using p2p rtc link...")
+				if(userNum<2) {
+					sendConsoleMessage(cws, otherCws, "using p2p rtc link...")
+				}
 
 			} else {
 				// UDP-RELAY mode: start one UDP proxy per "typ srflx" candidate
-
-				sendConsoleMessage(cws, otherCws, "using relayed rtc link...")
-
+				if(userNum<2) {
+					sendConsoleMessage(cws, otherCws, "using relayed rtc link...")
+				}
 				hostAddrIP4 := HostAddrIP4("") // from stun.go
 				var hostAddr = fmt.Sprintf("%d.%d.%d.%d",
 					hostAddrIP4[0], hostAddrIP4[1], hostAddrIP4[2], hostAddrIP4[3])
@@ -342,7 +344,9 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 				idx := strings.Index(messageString, "typ srflx")
 				if idx < 0 {
 					//fmt.Println(TAG2, "WsSessionHandler messageForward: NOT FOUND 'typ srflx'")
-					sendConsoleMessage(cws, otherCws, "no srflx entries - using p2p link")
+					if(userNum<2) {
+						sendConsoleMessage(cws, otherCws, "no srflx entries - using p2p link")
+					}
 				} else {
 					substr := messageString[0:idx]
 					//fmt.Println(TAG2,"substr="+substr)
@@ -351,7 +355,9 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 					//fmt.Println(TAG2,"elements=",elements)
 					if elements <= 2 {
 						fmt.Println(TAG2, "WsSessionHandler messageForward: NOT FOUND enough elements=", elements)
-						sendConsoleMessage(cws, otherCws, "linktype relayed failed: SDP element count")
+						if(userNum<2) {
+							sendConsoleMessage(cws, otherCws, "linktype relayed failed: SDP element count")
+						}
 					} else {
 						// addr = the host of the 1st "typ srflx" entry
 						addr = f[elements-3]
@@ -421,7 +427,9 @@ func WsSessionHandler(cws *websocket.Conn, done chan bool) {
 							messageString = newMessageString
 
 						} else {
-							sendConsoleMessage(cws, otherCws, "linktype relayed failed: addr not found")
+							if(userNum<2) {
+								sendConsoleMessage(cws, otherCws, "linktype relayed failed: addr not found")
+							}
 						}
 
 						sessionNumber++

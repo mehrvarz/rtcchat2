@@ -69,10 +69,6 @@ function connectToCalleeService() {
 			if(success) {
 			    // success: forward to callee URL
 				console.log("success activateConfirm: forward to callee URL");
-			    alert("You will now be transfered to the callee service.\n"+
-			    	  "Whenever you have it running, others will be able to call you.\n"+
-			    	  "Please bookmark your callee URL on the following page.\n"+
-			    	  "Never share your callee URL with others.\n");
 				window.location.href = calleeURL;
 
 			} else {
@@ -103,10 +99,10 @@ function checkHeartBeats() {
     },500);
 }
 
-function copyCaller() {
-	window.prompt("Your caller URL is like a phone number. By using this URL, others will be able to call you. Share this URL with friends. Copy to clipboard: Ctrl+C, Enter", callerURL);
-	// TODO: focus on in callBtn
-}
+$('#callBtn').click(function() {
+    // user has entered a room name
+    activateKeys()
+});
 
 function activateKeys() {
     console.log("activateKeys() keyKey="+keyKey);
@@ -120,7 +116,5 @@ function activateKeys() {
 	} catch(e) {
 		alert("websocket failed ",e)
 	}
-    // wait for response - see: case "activateConfirm":
-    // TODO: can socket.send() fail?
 }
 
