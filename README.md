@@ -6,10 +6,12 @@ A WebRTC chat service written in Go
 rtc chat establishes end-to-end encrypted, P2P and relayed communication links.
 
 
-Install and run services
-------------------------
+Installation
+------------
 
-You should have Go 1.1 installed.
+You should have Go 1.1 installed. 
+
+Install the following modules:
 
 	go get github.com/mehrvarz/rtcchat2
 	go get github.com/steveyen/gkvlite
@@ -20,10 +22,12 @@ Initialize the callee service key/value flat file DB.
 	cd $GOPATH/src/mehrvarz/rtcchat2
 	go run rtcchat/gkvCreate.go
 
+
 Run server without SSL keys (test mode)
 ---------------------------------------
 
-rtc chat should be run with SSL keys (see next section). For test purposes, you can run rtc chat server also without SSL keys (over http instead of https):
+rtc chat server should be run with SSL keys installed (see next section). 
+For plain test purposes, you can run rtc chat server without SSL keys (and use http instead of https):
 
 	go run rtcchat/main.go -secure=false
 
@@ -31,7 +35,7 @@ rtc chat should be run with SSL keys (see next section). For test purposes, you 
 Run server with SSL keys (standard mode)
 ----------------------------------------
 
-You need to create keys foruse with HTTPS.
+Create SSL keys for use with HTTPS:
 
 	mkdir keys && cd keys
 	openssl req -new -x509 -nodes -out cert.pem -keyout key.pem -days 100
@@ -47,23 +51,35 @@ Alternative: create symbolic links to your existing keys froms /etc/nginx
 
 Please note: the "keys" subfolder is expected to contain two files: "cert.pem" and "key.pem".
 
-This is how your rtcchat folder should look:
+This is how your installation folder should look:
 
 	rtcchat2
+
 		html
 			index.html
 			spinner.gif
 			bootstrap.min.css
 			...
+
 		rtcchat
 			main.go
 			gkvCreate.go
 			...
+
 		keys
 			key.pem
 			cert.pem
 
-To run all services:
+		rtcSignaling.go
+		calleeService.go
+		callerService.go
+		calleePersistKey.go
+		udpProxy.go
+		stun.go
+		LICENSE
+		...
+
+To run rtc chat server:
 
 	go run rtcchat/main.go
 
@@ -76,9 +92,11 @@ Test your server
 
 1. Open the following URL in two browser tabs:
 
-	https://127.0.0.1:8077   (http://127.0.0.1:8077 for insecure test mode)
+	https://127.0.0.1:8077
+	
+	http://127.0.0.1:8077 (for insecure test mode)
 
-2. Enter the same 'secret word' in both browser tabs. You should see the two instance connect.
+2. Enter the same 'secret word' in both browser tabs. You should see the two instances connect.
 
 
 More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
