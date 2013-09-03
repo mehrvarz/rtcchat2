@@ -27,7 +27,8 @@ Run server without SSL keys (test mode)
 ---------------------------------------
 
 rtc chat server should be run with SSL keys installed (see next section). 
-For plain test purposes, you can run rtc chat server without SSL keys (and use http instead of https):
+For simple test purposes, you can run rtc chat server without SSL keys 
+(and then use http instead of https):
 
 	go run rtcchat/main.go -secure=false
 
@@ -42,31 +43,31 @@ Create SSL keys for use with HTTPS:
 	(answer questions)
 	cd ..
 
-Alternative: create symbolic links to your existing keys froms /etc/nginx
+Alternative: create symbolic links to your existing keys from /etc/nginx
 
 	mkdir keys && cd keys
 	ln -s /etc/nginx/cert.pem cert.pem
 	ln -s /etc/nginx/key.pem key.pem
 	cd ..
 
-Please note: the "keys" subfolder is expected to contain two files: "cert.pem" and "key.pem".
+Note: the "keys" subfolder is expected to contain two files: "cert.pem" and "key.pem".
 
 This is how your installation folder should look:
 
-	rtcchat2
+	rtcchat2/
 
-		html
+		html/
 			index.html
 			spinner.gif
 			bootstrap.min.css
 			...
 
-		rtcchat
+		rtcchat/
 			main.go
 			gkvCreate.go
 			...
 
-		keys
+		keys/
 			key.pem
 			cert.pem
 
@@ -87,19 +88,22 @@ Or simply:
 
 	./run
 	
-Test your server 
+Test your server
 ----------------
 
 1. Open the following URL in two browser tabs:
 
 	https://127.0.0.1:8077
 	
-	http://127.0.0.1:8077 (for insecure test mode)
+	or: http://127.0.0.1:8077 for insecure test mode
 
 2. Enter the same 'secret word' in both browser tabs. You should see the two instances connect.
 
 
-More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
+More Info
+---------
+
+You find more info here: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
 License
 -------
