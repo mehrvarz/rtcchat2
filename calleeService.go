@@ -42,11 +42,12 @@ func CalleeService(secure bool, sigport int, callerPort int, autoAnswer string) 
 		templFilePath := fmt.Sprintf("%s%s", webrootCallee, templFile)
 		htmlTempl := template.Must(template.ParseFiles(templFilePath))
 		type PatchInfo struct {
-			SigPort        int
-			SecureCallee   bool
-			AutoAnswer     string
+			SigPort			int
+			CallerPort		int
+			SecureCallee	bool
+			AutoAnswer		string
 		}
-		patchInfo := PatchInfo{sigport, secure, autoAnswer}
+		patchInfo := PatchInfo{sigport, callerPort, secure, autoAnswer}
 		htmlTempl.Execute(w, patchInfo)
 	})
 
@@ -81,10 +82,9 @@ func CalleeService(secure bool, sigport int, callerPort int, autoAnswer string) 
 			homeTempl := template.Must(template.ParseFiles(pathToIndex))
 			homeTempl.Execute(w, patchInfo)
 			MakeKeyMap[keyKey] = callerKey+","+calleeKey
-			// TODO: what happens if MakeKeyMap runs full?
 			// user will activte these keys in: case "activateKeys"
 
-			// TODO: we need a service that runs in the background and removes all outdated keys
+			// TODO: what happens if MakeKeyMap runs full?
 
 		} else if strings.HasPrefix(r.URL.Path, "/callee:") {
 			calleeKey := r.RequestURI[8:]
@@ -184,16 +184,26 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 			}
 
 		case "announce":
-			// rtccallee.js: announce callee's availability for incoming calls
+			// set by rtccallee.js: announce callee's availability for incoming calls
 			callerKey = msg["uniqueID"]
 			CalleeMap[callerKey] = cws
-			// callerService.go will find cws entry in CalleeMap[] in: case "call":
-			// TODO: this way we CANNOT have a callee be registered on multiple devices in parallel
+			// callerService.go will find cws entry in CalleeMap[] (see: case "call":)
+			// TODO: what if CalleeMap is full? Ideally the oldest entries would be removed
+
 			fmt.Println(TAG3, "WsSessionHandlerCallee user with key is now registered:", callerKey)
-			msg := "you have been registered for caller id=" + callerKey
-			websocket.Message.Send(cws, fmt.Sprintf(`{"command":"info","msg": "%s"}`, msg))
+			// TODO: this way we CANNOT have a callee be registered on multiple devices in parallel
+			
+			// this allows the callee to display it's caller-key as a link
+			websocket.Message.Send(cws, fmt.Sprintf(`{"command":"callerKey","key": "%s"}`, callerKey))
+			
+			// TODO: if announced for the 1st time, we want to provide some 1st use explanation text to callee
+			// check gkv for number of times used
+			// but we only have the callerKey
+			//msg := "you have been registered for caller id=" + callerKey
+			//websocket.Message.Send(cws, fmt.Sprintf(`{"command":"info","msg": "%s"}`, msg))
 
 		case "activateKeys":
+			// sent by callee-new-keys.js
 			keyKey := msg["key"]
 			fmt.Println(TAG3, "WsSessionHandlerCallee user wants to activate key:", keyKey)
 			bothKeys,ok := MakeKeyMap[keyKey]
@@ -203,13 +213,15 @@ func WsSessionHandlerCallee(cws *websocket.Conn, doneWsSessionHandlerCallee chan
 				websocket.Message.Send(cws, `{"command":"activateConfirm","success": false}`)
 			} else {
 				//fmt.Println(TAG3, "WsSessionHandlerCallee ready to activate:", bothKeys)
-				// store both keys in rtcchat.gkv
+				// store callee + caller keys in rtcchat.gkv
 				strArray := strings.Split(bothKeys,",")
 				fmt.Println(TAG3, "WsSessionHandlerCallee ready to activate:", strArray[0], strArray[1])
 				StoreNewKeys(strArray[0], strArray[1])
-				// send to callee-new-keys.js
-				websocket.Message.Send(cws, `{"command":"activateConfirm","success": true}`)
+				// TODO: how can StoreNewKeys() fail?
 				delete(MakeKeyMap,keyKey)
+
+				// send success to callee-new-keys.js
+				websocket.Message.Send(cws, `{"command":"activateConfirm","success": true}`)
 			}
 		}
 	}

@@ -2,35 +2,29 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Timur's rtc chat admin</title>
-<!--script src="adapter.js"></script-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>rtc chat callee service</title>
 <script src="jquery-2.0.0.js"></script>
 <script src="bootstrap.min.js"></script>
 <link href="bootstrap.min.css" rel="stylesheet">
 <link href="bootstrap-responsive.min.css" rel="stylesheet">
+<style type="text/css">
+html,body {
+	height: 93%;
+}
+body {
+	height:100%;
+	width:96%; max-width:1280px; margin: 0 auto; padding-top:20px; padding-bottom:20px;
+	font-family: Lucida Sans Unicode, Lucida Grande, Arial, Verdana, Helvetica, Geneva, sans-serif;
+	font-size: 1.1em;
+}
+</style>
 </head>
-<body style="height:100%">
-
-<div style="position:relative; margin-top:10%;">
-  <div style="position:absolute; left:10%;">
-    <div class="span10">
-      <p class="head muted" style="margin-left:6px;">Timur's rtc chat admin</p>
-      <fieldset class="well">
-        <div class="text-info" id="chatlog" style="height:150px; overflow:auto;"></div>
-      </fieldset>
-      <!--form class="form-inline" action="javascript:sendMessageFromForm()">
-        <input type="text" id="messageTextBox" placeholder="Type your message here" autocomplete="off"
-          style="width:70%">
-        <button type="button" id="sendMessageBtn" class="btn">Send</button>
-      </form-->
-    </div>
-  </div>
-</div>
-
-<audio id="audiotag" src="Ring_Classic_02.ogg" type="audio/ogg" preload="auto" loop></audio>
-
+<body>
+	<div id="chatlog" style="height:88%; overflow:auto;margin-top:10px;"></div>
+	<audio id="audiotag" src="Ring_Classic_02.ogg" type="audio/ogg" preload="auto" loop></audio>
 <script>
-var key = "{{.Key}}"; // public caller-key: xx-xx-xx-xx
+var key = "{{.Key}}";
 </script>
 <script src="rtccallee.js"></script>
 </body>

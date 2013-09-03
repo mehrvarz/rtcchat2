@@ -6,6 +6,7 @@
 var host;
 var wsPort = {{.SigPort}}; 		   // default=8077, will be patched by rtcSignaling.go service
 var wsCalleePort = {{.SigPort}} +1; // default=8078, will be patched by rtcSignaling.go service
+var wsCallerPort = {{.CallerPort}}; // default=8078, will be patched by rtcSignaling.go service
 var secureCallee = {{.SecureCallee}};
 var autoAnswer = "{{.AutoAnswer}}";
 var socket = null;
@@ -26,7 +27,7 @@ function connectToCalleeService() {
 	else
 		socketServerAddress = "ws://"+hostAddr+"/ws";
     console.log("connecting to callee service",hostAddr);
-    writeToChatLog("connecting to callee service "+hostAddr+" ...", "text-success");
+    writeToChatLog("connecting to callee service...", "text-success");
     socket = new WebSocket(socketServerAddress);
     if(!socket) {
 	    console.log("failed to connect to callee service",hostAddr);
@@ -37,7 +38,7 @@ function connectToCalleeService() {
 
 	socket.onopen = function () {
 	    console.log("connected to callee service",hostAddr);
-	    writeToChatLog("connected to callee service "+hostAddr, "text-success");
+	    //writeToChatLog("connected to callee service", "text-success");
 
 		lastServerAction = new Date().getTime();
 	    // start heartbeat (send "alive?" requests, if last "connect" is older than)
@@ -73,6 +74,17 @@ function connectToCalleeService() {
 	        writeToChatLog(msg, "text-success");
 	        break;
 
+		case "callerKey":
+			var key = data.key;
+			var prot = "http";
+			if(secureCallee) 
+			    prot = "https";
+			var url = prot+"://"+location.hostname+":"+wsCallerPort+"/call:"+key;	// blank
+			var msg = "connected, others can call you now using your <a href=\""+url+"\" target=\"_blank\">CallerURL</a>";
+			console.log("callerKey=",msg);
+	        writeToChatLog(msg, "text-success");
+	        break;
+
 		case "newRoom":
 			// someone is calling us
 			// this event started in caller-enter-name.js: makeCall()
@@ -87,7 +99,7 @@ function connectToCalleeService() {
 				if(secureCallee) 
 				    prot = "https";
 
-				// autoAnswer
+				// autoAnswer: popup open exception required
 				if(autoAnswer && callerName==autoAnswer) {
 					var url = prot+"://"+location.hostname+":"+wsPort+
 									"/?room="+roomName+"&key="+key+"&linktype=p2p";  // linkType: caller get's his way
@@ -221,17 +233,6 @@ function sendMessage(msg) {
 
     return false;
 };
-
-/*
-function sendMessageFromForm() {
-    //console.log("sendMessageFromForm() -> sendMessage()",$('#messageTextBox').val());
-    sendMessage($('#messageTextBox').val());
-}
-
-$('#sendMessageBtn').click(function() {
-    sendMessageFromForm();
-});
-*/
 
 function getTimestamp() {
     var totalSec = new Date().getTime() / 1000;
