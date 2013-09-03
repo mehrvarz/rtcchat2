@@ -6,8 +6,8 @@ A WebRTC chat service written in Go
 rtc chat establishes end-to-end encrypted, P2P and relayed communication links.
 
 
-Install and run service
------------------------
+Install and run services
+------------------------
 
 You should have Go 1.1 installed.
 
@@ -20,26 +20,68 @@ Initialize the callee service key/value flat file DB.
 	cd $GOPATH/src/mehrvarz/rtcchat2
 	go run rtcchat/gkvCreate.go
 
-You also need to create keys for HTTPS. Look here https://github.com/mehrvarz/rtcchat
-under "Create keys for WebSocket signaling over https". 
+Run server without SSL keys (test mode)
+---------------------------------------
 
-To run all services:
-
-	./run
-	
-And open in your browser:
-
-	https://127.0.0.1:8077
-	
-To run all services, but use http instead of https (maybe because you didn't deploy SSL keys):
+rtc chat should be run with SSL keys (see next section). For test purposes, you can run rtc chat server also without SSL keys (over http instead of https):
 
 	go run rtcchat/main.go -secure=false
 
-And open in your browser:
 
-	http://127.0.0.1:8077
+Run server with SSL keys (standard mode)
+----------------------------------------
 
-Additional info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
+You need to create keys foruse with HTTPS.
+
+	mkdir keys && cd keys
+	openssl req -new -x509 -nodes -out cert.pem -keyout key.pem -days 100
+	(answer questions)
+	cd ..
+
+Alternative: create symbolic links to your existing keys froms /etc/nginx
+
+	mkdir keys && cd keys
+	ln -s /etc/nginx/cert.pem cert.pem
+	ln -s /etc/nginx/key.pem key.pem
+	cd ..
+
+Please note: the "keys" subfolder is expected to contain two files: "cert.pem" and "key.pem".
+
+This is how your rtcchat folder should look:
+
+	rtcchat2
+		html
+			index.html
+			spinner.gif
+			bootstrap.min.css
+			...
+		rtcchat
+			main.go
+			gkvCreate.go
+			...
+		keys
+			key.pem
+			cert.pem
+
+To run all services:
+
+	go run rtcchat/main.go
+
+Or simply:
+
+	./run
+	
+Test your server 
+----------------
+
+1. Open the following URL in two browser tabs:
+
+	https://127.0.0.1:8077   (http://127.0.0.1:8077 for insecure test mode)
+
+2. Enter the same 'secret word' in both browser tabs. You should see the two instance connect.
+
+
+More info: [http://mehrvarz.github.io/rtcchat2](http://mehrvarz.github.io/rtcchat2/)
 
 License
 -------
