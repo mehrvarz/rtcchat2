@@ -13,8 +13,7 @@ import (
 )
 
 func main() {
-	var secureRedirect = flag.Bool(  "secureRedirect", true, "set false to make redirect use http instead of https")
-	var secureCallee   = flag.Bool(  "secureCallee", true, "set false to make callee use http instead of https")
+	var secure         = flag.Bool(  "secure", true, "set false to make redirect use http instead of https")
 	var sigport        = flag.Int(   "sigport", 8077, "set port for client signaling ")
 	var callerport     = flag.Int(   "callerport", 8000, "set port for redirect service")
 	var stunport       = flag.Int(   "stunport", 19253, "set STUN port")
@@ -37,15 +36,15 @@ func main() {
 
 	// RtcSignaling (default port 8077 = sigport)
 	// makes use of "html/signaling/*"
-	go rtcchat2.RtcSignaling(true,*sigport,*stunport,*stunhost,*ringtone)
+	go rtcchat2.RtcSignaling(*secure,*sigport,*stunport,*stunhost,*ringtone)
 
 	// CalleeService (default port 8078 = sigPort+1) allows a callee to wait for and receive chat calls
 	// makes use of "html/callee/*"
-	go rtcchat2.CalleeService(*secureCallee, *sigport, *callerport, "auto")
+	go rtcchat2.CalleeService(*secure, *sigport, *callerport, "auto")
 
 	// CallerService (default port 8000 = callerport) allows other clients to "call" admin clients
 	// makes use of "html/caller-enter-name/*" and "html/callee-unavailable/*"
-	go rtcchat2.CallerService(*secureRedirect, *callerport, *sigport)
+	go rtcchat2.CallerService(*secure, *callerport, *sigport)
 	
 	go rtcchat2.BGCleaner()
 
